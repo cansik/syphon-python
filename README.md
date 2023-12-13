@@ -1,4 +1,6 @@
 # Syphon for Python
+[![Build](https://github.com/cansik/syphon-python/actions/workflows/build.yml/badge.svg)](https://github.com/cansik/syphon-python/actions/workflows/build.yml)
+
 Python wrapper for the GPU texture sharing framework Syphon. This library has been created to support the Metal backend instead of OpenGL. Currently, only Metal and only the Server parts are implemented. The idea is to implement OpenGL and Metal, as well as Client and Server.
 
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the [Syphon-Framework](https://github.com/Syphon/Syphon-Framework) directly from within Python. This approach removes the need of a native wrapper and allows Python developers to extend the library if needed.
