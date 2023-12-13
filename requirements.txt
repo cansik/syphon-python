@@ -1,0 +1,3 @@
+pyobjc-core
+pyobjc-framework-metal
+pyobjc-framework-cocoa

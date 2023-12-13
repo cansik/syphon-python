@@ -1,0 +1,3 @@
+[submodule "vendor/Syphon"]
+	path = vendor/Syphon
+	url = https://github.com/Syphon/Syphon-Framework
