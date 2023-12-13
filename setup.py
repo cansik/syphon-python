@@ -67,7 +67,7 @@ class XcodeBuild(build_ext):
         # copy resulting framework into output folder
         os.makedirs(ext.output_path, exist_ok=True)
         result_name = ext.output_path.joinpath(ext.output_framework_path.name)
-        shutil.rmtree(result_name)
+        shutil.rmtree(result_name, ignore_errors=True)
         shutil.copytree(str(ext.output_framework_path), result_name)
 
 
