@@ -106,4 +106,4 @@ class SyphonMetalServer(BaseSyphonServer):
         return self.context.hasClients()
 
     def _get_texture_size(self, texture: Texture) -> Tuple[int, int]:
-        pass
+        return texture.width(), texture.height()
