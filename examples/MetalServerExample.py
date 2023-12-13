@@ -16,7 +16,7 @@ def main():
         Metal.MTLPixelFormatRGBA8Unorm, texture_width, texture_height, False
     )
 
-    # Create a Metal texture using server interal device
+    # Create a Metal texture using server internal device
     metal_texture = server.device.newTextureWithDescriptor_(texture_descriptor)
 
     region = Metal.MTLRegion((0, 0, 0), (texture_width, texture_height, 1))
