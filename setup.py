@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 from setuptools import Extension
 from setuptools import find_packages, setup
@@ -66,14 +66,27 @@ class XcodeBuild(build_ext):
 
         # copy resulting framework into output folder
         os.makedirs(ext.output_path, exist_ok=True)
-        shutil.copytree(str(ext.output_framework_path), ext.output_path.joinpath(ext.output_framework_path.name))
+        result_name = ext.output_path.joinpath(ext.output_framework_path.name)
+        shutil.rmtree(result_name)
+        shutil.copytree(str(ext.output_framework_path), result_name)
+
+
+def find_package_data(data_path: Union[str, os.PathLike], exclude_hidden: bool = True) -> List[str]:
+    data_path = Path(data_path)
+    files = list(data_path.rglob("*"))
+
+    if exclude_hidden:
+        files = [f for f in files if not f.name.startswith(".")]
+
+    paths = [str(f.absolute()) for f in files if f.is_file()]
+    return paths
 
 
 setup(
     name=NAME,
     version=PACKAGE_VERSION,
     packages=required_packages,
-    package_data={PACKAGE_NAME: ["*.*"]},
+    package_data={PACKAGE_NAME: find_package_data(LIBS_PATH)},
     include_package_data=True,
     url="https://github.com/cansik/syphon-python",
     license="MIT License",
