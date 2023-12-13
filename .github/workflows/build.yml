@@ -21,8 +21,8 @@ jobs:
     name: ${{ github.event.inputs.tag }} python ${{ matrix.python-version }} on ${{ matrix.os }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -34,6 +34,8 @@ jobs:
       - name: Get Library Version
         id: get_version
         run: |
+          pip install setuptools
+          
           lib_version=$(python setup.py --version)
           echo "Library Version: $lib_version"
           
