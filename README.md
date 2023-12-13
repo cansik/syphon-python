@@ -10,6 +10,7 @@ The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc
 git clone --recurse-submodules https://github.com/cansik/syphon-python.git
 
 # install dependencies
+pip install -r dev-requirements.txt
 pip install -r requirements.txt
 ```
 
