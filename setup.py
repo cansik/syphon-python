@@ -82,11 +82,13 @@ def find_package_data(data_path: Union[str, os.PathLike], exclude_hidden: bool =
     return paths
 
 
+package_data = {PACKAGE_NAME: find_package_data(LIBS_PATH)}
+
 setup(
     name=NAME,
     version=PACKAGE_VERSION,
     packages=required_packages,
-    package_data={PACKAGE_NAME: find_package_data(LIBS_PATH)},
+    package_data=package_data,
     include_package_data=True,
     url="https://github.com/cansik/syphon-python",
     license="MIT License",
