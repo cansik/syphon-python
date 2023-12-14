@@ -6,6 +6,7 @@ from syphon import server as syphon_server
 
 
 def main():
+    print("starting server...")
     server = syphon_server.SyphonMetalServer("Test")
 
     # create texture and load image onto texture
@@ -26,6 +27,7 @@ def main():
     value = 0
 
     running = True
+    print("publishing...")
     while running:
         # generate random pixels
         value = (value + 1) % 255
