@@ -1,3 +1,5 @@
-pyobjc-core
-pyobjc-framework-metal
-pyobjc-framework-cocoa
+pyobjc-core~=10.1
+pyobjc-framework-metal~=10.1
+pyobjc-framework-cocoa~=10.1
+
+pyopengl~=3.1.7

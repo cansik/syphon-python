@@ -10,7 +10,7 @@ from setuptools.command.build_ext import build_ext
 
 NAME = "syphon-python"
 PACKAGE_NAME = "syphon"
-PACKAGE_VERSION = "0.0.1"
+PACKAGE_VERSION = "0.0.1-alpha"
 
 LIBS_PATH = Path(PACKAGE_NAME, "libs")
 
@@ -96,10 +96,12 @@ setup(
     author_email="github@broox.ch",
     description="Python wrapper for the GPU texture sharing framework Syphon.",
     install_requires=required,
-    ext_modules=[XcodeExtension("Syphon-Framework",
-                                project_path="vendor/Syphon/Syphon.xcodeproj",
-                                output_path=LIBS_PATH,
-                                target_name="Syphon")],
+    ext_modules=[
+        XcodeExtension("Syphon-Framework",
+                       project_path="vendor/Syphon/Syphon.xcodeproj",
+                       output_path=LIBS_PATH,
+                       target_name="Syphon")
+    ],
     cmdclass={"build_ext": XcodeBuild},
     zip_safe=False,
 )

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Any
 
+import AppKit
 import Cocoa
 import Metal
 import objc
+from OpenGL.GL import *
 
 from syphon.types import Texture, Region, Size
 
@@ -107,3 +109,63 @@ class SyphonMetalServer(BaseSyphonServer):
 
     def _get_texture_size(self, texture: Texture) -> Tuple[int, int]:
         return texture.width(), texture.height()
+
+
+class SyphonOpenGLServer(BaseSyphonServer):
+    def __init__(self, name: str, cgl_context_obj: Optional[Any] = None):
+        super().__init__(name)
+
+        # store CGL context object
+        self.cgl_context_obj = self._get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
+
+        # create syphon gl server
+        SyphonOpenGLServerObjC = objc.lookUpClass("SyphonOpenGLServer")
+        self.context = SyphonOpenGLServerObjC.alloc().initWithName_context_options_(name, self.cgl_context_obj, None)
+
+    def publish_frame_texture(self,
+                              texture: GLint,
+                              region: Optional[Region] = None,
+                              size: Optional[Size] = None,
+                              is_flipped: bool = False,
+                              target: GLenum = GL_TEXTURE_2D):
+        # create ns-region
+        region, size = self._prepare_region_and_size(texture, region, size)
+        ns_region = Cocoa.NSRect((region[0], region[1]), (region[2], region[3]))
+        ns_size = Cocoa.NSSize(size[0], size[1])
+
+        self.context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_(texture, target,
+                                                                                              ns_region,
+                                                                                              ns_size, is_flipped)
+
+    def publish(self):
+        self.context.publish()
+
+    def stop(self):
+        self.context.stop()
+
+    @property
+    def has_clients(self) -> bool:
+        return self.context.hasClients()
+
+    def _get_texture_size(self, texture: Texture) -> Size:
+        glBindTexture(GL_TEXTURE_2D, texture)
+
+        width = GLint()
+        height = GLint()
+
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, width)
+        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, height)
+
+        glBindTexture(GL_TEXTURE_2D, 0)
+
+        return int(width.value), int(height.value)
+
+    @staticmethod
+    def _get_current_cgl_context_obj() -> Any:
+        ns_ctx = AppKit.NSOpenGLContext.currentContext()
+
+        if ns_ctx is None:
+            raise Exception("Could not read current NSOpenGLContext. "
+                            "Please first create a valid context or pass an existing one to the constructor.")
+
+        return ns_ctx.CGLContextObj()

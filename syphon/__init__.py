@@ -5,10 +5,10 @@ import objc
 SYPHON_LIBS_PATH = Path(__file__).parent.joinpath("libs")
 
 
-def load_syphon_bundle():
-    syphon_framework_path = SYPHON_LIBS_PATH.joinpath("Syphon.framework")
-    objc.loadBundle("Syphon", globals(), bundle_path=str(syphon_framework_path), scan_classes=False)
+def _load_lib_bundle(bundle_name: str, scan_classes: bool = False):
+    framework_path = SYPHON_LIBS_PATH.joinpath(f"{bundle_name}.framework")
+    objc.loadBundle(f"{bundle_name}", globals(), bundle_path=str(framework_path), scan_classes=scan_classes)
 
 
 # initialize syphon bundle
-load_syphon_bundle()
+_load_lib_bundle("Syphon")
