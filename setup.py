@@ -14,7 +14,7 @@ PACKAGE_VERSION = "0.0.1-alpha"
 
 LIBS_PATH = Path(PACKAGE_NAME, "libs")
 
-required_packages = find_packages(exclude=["examples"])
+required_packages = find_packages(exclude=["examples", "playground"])
 
 with open("requirements.txt") as f:
     required = [line for line in f.read().splitlines() if not line.startswith("-")]

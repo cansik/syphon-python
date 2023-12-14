@@ -4,7 +4,7 @@ import glfw
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 
-from syphon.server import SyphonOpenGLServer
+import syphon
 
 
 def render(texture: GLuint, data: bytes, width: int, height: int):
@@ -42,7 +42,7 @@ def main():
     glfw.make_context_current(window)
 
     # start server
-    syphon = SyphonOpenGLServer("Demo")
+    server = syphon.SyphonOpenGLServer("OpenGL Test")
 
     # Enable vsync
     glfw.swap_interval(1)
@@ -67,12 +67,12 @@ def main():
         glfw.poll_events()
         render(texture, pixels, texture_width, texture_height)
 
-        if syphon.has_clients:
-            syphon.publish_frame_texture(texture)
+        if server.has_clients:
+            server.publish_frame_texture(texture)
 
         glfw.swap_buffers(window)
 
-    syphon.stop()
+    server.stop()
     glfw.terminate()
 
 

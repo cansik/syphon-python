@@ -1,13 +1,12 @@
 from itertools import islice, cycle
 
 import Metal
-
-from syphon import server as syphon_server
+import syphon
 
 
 def main():
     print("starting server...")
-    server = syphon_server.SyphonMetalServer("Test")
+    server = syphon.SyphonMetalServer("Metal Test")
 
     # create texture and load image onto texture
     texture_width, texture_height = 640, 480

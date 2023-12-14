@@ -9,7 +9,7 @@ The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc
 
 ## State of Development
 
-- [ ] Syphon Server Discovery
+- [x] Syphon Server Discovery
 - [x] Metal Server
 - [ ] Metal Client
 - [x] OpenGL Server
