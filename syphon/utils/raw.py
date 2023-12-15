@@ -4,7 +4,30 @@ from typing import Any, Optional
 import Metal
 
 
-def mtl_texture_to_bytes(texture: Any, buffer: Optional[Any] = None) -> bytes:
+def create_mtl_texture(device: Any,
+                       width: int,
+                       height: int,
+                       pixel_format: int = Metal.MTLPixelFormatRGBA8Unorm) -> Any:
+    texture_descriptor = Metal.MTLTextureDescriptor.texture2DDescriptorWithPixelFormat_width_height_mipmapped_(
+        pixel_format, width, height, False
+    )
+
+    return device.newTextureWithDescriptor_(texture_descriptor)
+
+
+def copy_bytes_to_mtl_texture(data: bytes, texture: Any):
+    region = Metal.MTLRegion((0, 0, 0), (texture.width(), texture.height(), 1))
+    bytes_per_row = texture.width() * 4
+
+    texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow_(
+        region,
+        0,  # mipmapLevel
+        data,
+        bytes_per_row
+    )
+
+
+def copy_mtl_texture_to_bytes(texture: Any, buffer: Optional[Any] = None) -> bytes:
     if (texture.pixelFormat() != Metal.MTLPixelFormatBGRA8Unorm
             and texture.pixelFormat() != Metal.MTLPixelFormatRGBA8Unorm):
         raise Exception("Not correct pixel format (expected MTLPixelFormatBGRA8Unorm or MTLPixelFormatRGBA8Unorm)")

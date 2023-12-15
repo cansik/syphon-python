@@ -1,7 +1,7 @@
 import cv2
 
 import syphon
-from syphon.utils.numpy import mtl_texture_to_image
+from syphon.utils.numpy import copy_mtl_texture_to_image
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     while running:
         if client.has_new_frame:
             texture = client.new_frame_image
-            image = mtl_texture_to_image(texture)
+            image = copy_mtl_texture_to_image(texture)
 
             cv2.imshow("Image", image)
             cv2.waitKey(1)
