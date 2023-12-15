@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Any, List
+from typing import Callable, Any, List, Optional
 
 import objc
 from Cocoa import NSRunLoop, NSDefaultRunLoopMode, NSDate, NSImage
@@ -58,3 +58,19 @@ class SyphonServerDirectory:
             NSDefaultRunLoopMode,
             NSDate.dateWithTimeIntervalSinceNow_(self.run_loop_interval)
         )
+
+    def servers_matching_name(self,
+                              name: Optional[str] = None,
+                              app_name: Optional[str] = None) -> List[SyphonServerDescription]:
+        filtered_servers = []
+
+        for server in self.servers:
+            if name is not None and name == server.name:
+                filtered_servers.append(server)
+                continue
+
+            if app_name is not None and app_name == server.app_name:
+                filtered_servers.append(server)
+                continue
+
+        return filtered_servers
