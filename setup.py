@@ -59,6 +59,10 @@ class XcodeBuild(build_ext):
     def build_extension(self, ext: XcodeExtension):
         print(f"building extension {ext.target_name} in {ext.project_root}...")
 
+        if not ext.project_path.exists():
+            raise FileNotFoundError(f"There is not project at '{ext.project_path}'. "
+                                    f"Did you initialize the git submodules?")
+
         command = [
             "xcodebuild",
             "-project", f"{ext.project_path.name}",
