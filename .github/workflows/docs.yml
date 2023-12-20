@@ -25,6 +25,7 @@ jobs:
       # install relevant files
       - run: pip install -r dev-requirements.txt
       - run: pip install -r requirements.txt
+      - run: python setup.py build
 
       # build documentation into docs/.
       - run: python setup.py doc
