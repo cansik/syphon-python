@@ -1,11 +1,17 @@
 from pathlib import Path
-
 import objc
 
 SYPHON_LIBS_PATH = Path(__file__).parent.joinpath("libs")
 
 
 def _load_lib_bundle(bundle_name: str, scan_classes: bool = False):
+    """
+    Load a dynamic library bundle using Objective-C.
+
+    Parameters:
+    - bundle_name (str): The name of the bundle to load.
+    - scan_classes (bool, optional): If True, scan classes in the bundle. Defaults to False.
+    """
     framework_path = SYPHON_LIBS_PATH.joinpath(f"{bundle_name}.framework")
     objc.loadBundle(f"{bundle_name}", globals(), bundle_path=str(framework_path), scan_classes=scan_classes)
 
