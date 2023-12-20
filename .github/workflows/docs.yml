@@ -15,7 +15,7 @@ permissions:
 jobs:
   # Build the documentation and upload the static HTML files as an artifact.
   build:
-    runs-on: ubuntu-latest
+    runs-on: 'macos-latest'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
