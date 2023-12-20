@@ -17,7 +17,8 @@ the need of a native wrapper and allows Python developers to extend the library 
 - [x] Metal Server
 - [x] Metal Client
 - [x] OpenGL Server
-- [ ] OpenGL Client
+- [x] OpenGL Client
+- [ ] Syphon Client On Frame Callback
 
 ## Installation
 
