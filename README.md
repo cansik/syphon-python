@@ -1,6 +1,8 @@
 # Syphon for Python
 
+[![Documentation](https://img.shields.io/badge/read-documentation-blue)](https://cansik.github.io/syphon-python/)
 [![Build](https://github.com/cansik/syphon-python/actions/workflows/build.yml/badge.svg)](https://github.com/cansik/syphon-python/actions/workflows/build.yml)
+[![PyPI](https://img.shields.io/pypi/v/syphon-python)](https://pypi.org/project/syphon-python/)
 
 ⚠️ This library is still *under development*.
 
@@ -51,6 +53,16 @@ Create a wheel package (also runs `build` automatically)
 python setup.py bdist_wheel
 ```
 
-### About
+## Generate Documentation
 
-Copyright (c) 2023 Florian Bruggisser
+```bash
+# create documentation into "./docs
+python setup.py doc
+
+# launch pdoc webserver
+python setup.py doc --launch
+```
+
+## About
+
+MIT License - Copyright (c) 2023 Florian Bruggisser
