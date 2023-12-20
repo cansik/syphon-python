@@ -1,6 +1,8 @@
+import distutils
 import os
 import shutil
 import subprocess
+from distutils.command.install import install
 from pathlib import Path
 from typing import Union, Optional, List
 
@@ -10,11 +12,13 @@ from setuptools.command.build_ext import build_ext
 
 NAME = "syphon-python"
 PACKAGE_NAME = "syphon"
-PACKAGE_VERSION = "0.0.1-alpha"
+PACKAGE_VERSION = "0.1.0"
+PACKAGE_URL = "https://github.com/cansik/syphon-python"
+PACKAGE_DOC_MODULES = ["syphon"]
 
 LIBS_PATH = Path(PACKAGE_NAME, "libs")
 
-required_packages = find_packages(exclude=["examples", "playground"])
+required_packages = find_packages(exclude=["examples", "playground", "scripts"])
 
 with open("requirements.txt") as f:
     required = [line for line in f.read().splitlines() if not line.startswith("-")]
@@ -71,6 +75,28 @@ class XcodeBuild(build_ext):
         shutil.copytree(str(ext.output_framework_path), result_name)
 
 
+class GenerateDoc(distutils.cmd.Command):
+    description = "generate pdoc documentation"
+
+    user_options = install.user_options + [
+        ("output=", None, "Output path for the documentation."),
+        ("launch", None, "Launch webserver to display documentation.")
+    ]
+
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.output: str = "docs"
+        self.launch: bool = False
+
+    def finalize_options(self):
+        pass
+
+    def run(self) -> None:
+        from scripts.generate_doc import generate_doc
+        generate_doc(PACKAGE_NAME, PACKAGE_VERSION, PACKAGE_URL, required_packages,
+                     Path(self.output), PACKAGE_DOC_MODULES, launch=bool(self.launch))
+
+
 def find_package_data(data_path: Union[str, os.PathLike], exclude_hidden: bool = True) -> List[str]:
     data_path = Path(data_path)
     files = list(data_path.rglob("*"))
@@ -90,7 +116,7 @@ setup(
     packages=required_packages,
     package_data=package_data,
     include_package_data=True,
-    url="https://github.com/cansik/syphon-python",
+    url=PACKAGE_URL,
     license="MIT License",
     author="Florian Bruggisser",
     author_email="github@broox.ch",
@@ -102,6 +128,9 @@ setup(
                        output_path=LIBS_PATH,
                        target_name="Syphon")
     ],
-    cmdclass={"build_ext": XcodeBuild},
+    cmdclass={
+        "build_ext": XcodeBuild,
+        "doc": GenerateDoc,
+    },
     zip_safe=False,
 )

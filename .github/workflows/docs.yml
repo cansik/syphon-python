@@ -1,0 +1,49 @@
+name: Publish Docs
+
+# build the documentation whenever there are new commits on main
+on:
+  workflow_dispatch:
+  push:
+    # Alternative: only build for tags.
+    tags:
+      - '*'
+
+# security: restrict permissions for CI jobs.
+permissions:
+  contents: read
+
+jobs:
+  # Build the documentation and upload the static HTML files as an artifact.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # install relevant files
+      - run: pip install -r dev-requirements.txt
+      - run: pip install -r requirements.txt
+
+      # build documentation into docs/.
+      - run: python setup.py doc
+
+      - uses: actions/upload-pages-artifact@v2
+        with:
+          path: docs/
+
+  # Deploy the artifact to GitHub pages.
+  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v2

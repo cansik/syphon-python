@@ -1,3 +1,8 @@
+"""
+.. include:: ../README.md
+.. include:: ../DOCUMENTATION.md
+"""
+
 from pathlib import Path
 import objc
 
