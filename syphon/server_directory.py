@@ -11,9 +11,9 @@ class SyphonServerNotification(Enum):
     Enum representing Syphon server notifications.
 
     Enum Values:
-    - Announce: Notification for a Syphon server announcement.
-    - Update: Notification for a Syphon server update.
-    - Retire: Notification for retiring a Syphon server.
+    - Announce: A new SyphonServer is available on the system.
+    - Update: An existing SyphonServer instance has changed its description.
+    - Retire: A SyphonServer instance will no longer be available.
     """
     Announce = "SyphonServerAnnounceNotification"
     Update = "SyphonServerUpdateNotification"
