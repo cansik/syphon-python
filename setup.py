@@ -114,6 +114,10 @@ def find_package_data(data_path: Union[str, os.PathLike], exclude_hidden: bool =
 
 package_data = {PACKAGE_NAME: find_package_data(LIBS_PATH)}
 
+# read readme
+current_dir = Path(__file__).parent
+long_description = (current_dir / "README.md").read_text()
+
 setup(
     name=NAME,
     version=PACKAGE_VERSION,
@@ -125,6 +129,8 @@ setup(
     author="Florian Bruggisser",
     author_email="github@broox.ch",
     description="Python wrapper for the GPU texture sharing framework Syphon.",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     install_requires=required,
     ext_modules=[
         XcodeExtension("Syphon-Framework",
