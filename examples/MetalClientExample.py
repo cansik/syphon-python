@@ -6,7 +6,7 @@ from syphon.utils.numpy import copy_mtl_texture_to_image
 
 def main():
     directory = syphon.SyphonServerDirectory()
-    servers = directory.servers_matching_name(app_name="Simple Server")
+    servers = directory.servers
 
     if not servers:
         print("No server found!")
@@ -25,7 +25,7 @@ def main():
             cv2.imshow("Image", image)
             cv2.waitKey(1)
 
-    print("done")
+    client.stop()
 
 
 if __name__ == "__main__":

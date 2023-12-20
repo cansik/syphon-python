@@ -15,4 +15,4 @@ _load_lib_bundle("Syphon")
 
 from syphon.server import BaseSyphonServer, SyphonMetalServer, SyphonOpenGLServer
 from syphon.server_directory import SyphonServerDirectory
-from syphon.client import BaseSyphonClient, SyphonMetalClient
+from syphon.client import BaseSyphonClient, SyphonMetalClient, SyphonOpenGLClient

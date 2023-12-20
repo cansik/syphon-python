@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Optional, Any
 
-import AppKit
 import Cocoa
 import Metal
 import objc
 from OpenGL.GL import *
 
 from syphon.types import Texture, Region, Size
+from syphon.utils import opengl
 
 
 class BaseSyphonServer(ABC):
@@ -116,7 +116,7 @@ class SyphonOpenGLServer(BaseSyphonServer):
         super().__init__(name)
 
         # store CGL context object
-        self.cgl_context_obj = self._get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
+        self.cgl_context_obj = opengl.get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
 
         # create syphon gl server
         SyphonOpenGLServerObjC = objc.lookUpClass("SyphonOpenGLServer")
@@ -159,13 +159,3 @@ class SyphonOpenGLServer(BaseSyphonServer):
         glBindTexture(GL_TEXTURE_2D, 0)
 
         return int(width.value), int(height.value)
-
-    @staticmethod
-    def _get_current_cgl_context_obj() -> Any:
-        ns_ctx = AppKit.NSOpenGLContext.currentContext()
-
-        if ns_ctx is None:
-            raise Exception("Could not read current NSOpenGLContext. "
-                            "Please first create a valid context or pass an existing one to the constructor.")
-
-        return ns_ctx.CGLContextObj()
