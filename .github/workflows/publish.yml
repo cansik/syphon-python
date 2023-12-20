@@ -28,6 +28,7 @@ jobs:
         tag: ${{ github.event.inputs.tag }}
         fileName: "*"
         out-file-path: "dist"
+        token: ${{ github.token }}
 
     - name: Test
       run: |
