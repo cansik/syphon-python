@@ -41,6 +41,9 @@ def main():
         f"--output-filename={app_name}",
         f"--output-dir={output_path}",
 
+        # limit
+        "--nofollow-import-to=numpy.*",
+
         # plugins
 
         # macos specific
