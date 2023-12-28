@@ -12,7 +12,7 @@ from setuptools.command.build_ext import build_ext
 
 NAME = "syphon-python"
 PACKAGE_NAME = "syphon"
-PACKAGE_VERSION = "0.1.0"
+PACKAGE_VERSION = "0.1.1"
 PACKAGE_URL = "https://github.com/cansik/syphon-python"
 PACKAGE_DOC_MODULES = ["syphon"]
 
