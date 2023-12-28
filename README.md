@@ -4,14 +4,14 @@
 [![Build](https://github.com/cansik/syphon-python/actions/workflows/build.yml/badge.svg)](https://github.com/cansik/syphon-python/actions/workflows/build.yml)
 [![PyPI](https://img.shields.io/pypi/v/syphon-python)](https://pypi.org/project/syphon-python/)
 
-⚠️ This library is still *under development*.
+⚠️ This library is still *in development*.
 
-Python wrapper for the GPU texture sharing framework Syphon. This library has been created to support the Metal backend
-as well as the deprecated OpenGL backend. It requires **macOS 11 or higher**.
+Python wrapper for the Syphon GPU texture sharing framework. This library was created to support both the Metal backend
+and the deprecated OpenGL backend. It requires **macOS 11 or above**.
 
-The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap
-the [Syphon-Framework](https://github.com/Syphon/Syphon-Framework) directly from within Python. This approach removes
-the need of a native wrapper and allows Python developers to extend the library if needed.
+The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
+Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
+native wrapper and allows Python developers to extend the library as needed.
 
 ## State of Development
 
@@ -23,19 +23,19 @@ the need of a native wrapper and allows Python developers to extend the library 
 - [ ] Syphon Client On Frame Callback
 
 ## Usage
-To install `syphon-python` it is recommended to use a pre-built binary from PyPi:
+To install `syphon-python` it is recommended to use a prebuilt binary from PyPi:
 
 ```bash
 pip install syphon-python
 ```
 
-For examples using `numpy`, please also install numpy:
+To run all the examples, please also install [Numpy](https://numpy.org/) and [OpenCV](https://opencv.org/):
 
 ```bash
-pip install numpy
+pip install numpy opencv-python
 ```
 
-The following code snippet is a basic example which shows how to share `numpy` images as a `MTLTexture` with a `SyphonMetalServer`. There are more examples under [examples](/examples).
+The following code snippet is a basic example showing how to share `numpy` images as `MTLTexture` with a `SyphonMetalServer`. There are more examples in [examples](/examples).
 
 ```python
 import time
@@ -65,7 +65,7 @@ server.stop()
 ```
 
 ## Development
-To develop the library or install it manually, use the following commands to setup the local repository.
+To develop or manually install the library, use the following commands to set up the local repository.
 
 ### Installation
 
@@ -84,7 +84,7 @@ pip install opencv-python
 
 ### Build
 
-Build the Syphon-Framework on your machine:
+Build the Syphon framework on your machine:
 
 ```bash
 python setup.py build

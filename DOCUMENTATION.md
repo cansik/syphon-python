@@ -167,7 +167,7 @@ To make sharing graphic textures as easy as possible, the library provides some 
 The `syphon.utils.raw` module contains methods to create and manipulate textures with a raw `bytes` array.
 
 #### Create MTLTexture
-To create an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.create_mtl_texture` can be used. It is possible to create your own default device or use a server's `device` property to get the current device.
+To create an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.create_mtl_texture` can be used. It is possible to create your own default device or use a server's `syphon.server.SyphonMetalServer.device` property to get the current device.
 
 ```python
 import Metal
@@ -178,7 +178,7 @@ texture = create_mtl_texture(mtl_device, 512, 512)
 ```
 
 #### Manipulate MTLTexture
-To write `bytes` to an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.copy_bytes_to_mtl_texture` can be used.
+To write `bytes` to an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.copy_bytes_to_mtl_texture()` can be used.
 
 ```python
 from syphon.utils.raw import copy_bytes_to_mtl_texture
@@ -189,7 +189,7 @@ texture = ... # MLTTexture object
 copy_bytes_to_mtl_texture(data, texture)
 ```
 
-To read `bytes` from an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.copy_mtl_texture_to_bytes` can be used.
+To read `bytes` from an [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture) the method `syphon.utils.raw.copy_mtl_texture_to_bytes()` can be used.
 
 ```python
 from syphon.utils.raw import copy_mtl_texture_to_bytes
@@ -204,7 +204,7 @@ If you are working with [Numpy](https://numpy.org/) arrays, the `syphon.utils.nu
 
 It is important to note that the `numpy` package is not installed by default, it must be installed using `pip install numpy`.
 
-To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mtl_texture` method can be used.
+To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mtl_texture()` method can be used.
 
 ```python
 import numpy as np
@@ -219,7 +219,7 @@ texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
 copy_image_to_mtl_texture(texture_data, texture)
 ```
 
-To read a numpy image from a MTLTexture, the `syphon.utils.numpy.copy_mtl_texture_to_image` method can be used.
+To read a numpy image from a MTLTexture, the `syphon.utils.numpy.copy_mtl_texture_to_image()` method can be used.
 
 ```python
 import numpy as np

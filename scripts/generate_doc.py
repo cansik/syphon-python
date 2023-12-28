@@ -90,11 +90,7 @@ def custom_linkify(context: Context, code: str, namespace: str = "") -> str:
                 if plain_text.endswith("()"):
                     plain_text = f"{doc.name}()"
                 else:
-                    # replaced doc.fullname with doc.name if is class (uppercase letter) to only display identifier
-                    if doc.fullname.split(".")[-1][0].isupper():
-                        plain_text = doc.name
-                    else:
-                        plain_text = doc.fullname
+                    plain_text = doc.name
                 return f'<a href="{relative_link(context["module"].modulename, module)}{qualname}">{plain_text}</a>'
             else:
                 return text
