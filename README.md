@@ -10,7 +10,7 @@ Python wrapper for the Syphon GPU texture sharing framework. This library was cr
 and the deprecated OpenGL backend. It requires **macOS 11 or above**.
 
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
-Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
+[Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
 native wrapper and allows Python developers to extend the library as needed.
 
 ## State of Development
