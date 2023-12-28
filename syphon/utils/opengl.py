@@ -2,6 +2,8 @@ from typing import Any
 
 import AppKit
 
+from syphon.utils.exceptions import NSOpenGLContextNotFoundException, CGLContextNotFoundException
+
 
 def get_current_cgl_context_obj() -> Any:
     """
@@ -11,13 +13,17 @@ def get_current_cgl_context_obj() -> Any:
     - Any: The CGL context object.
 
     Raises:
-    - Exception: If the current NSOpenGLContext cannot be retrieved.
-                 Please first create a valid context or pass an existing one to the constructor.
+    - NSOpenGLContextNotFoundException: If the current NSOpenGLContext cannot be retrieved.
+    - CGLContextNotFoundException: If the CGLContextObj cannot be retrieved from NSOpenGLContext.
     """
     ns_ctx = AppKit.NSOpenGLContext.currentContext()
 
     if ns_ctx is None:
-        raise Exception("Could not read current NSOpenGLContext. "
-                        "Please first create a valid context or pass an existing one to the constructor.")
+        raise NSOpenGLContextNotFoundException()
 
-    return ns_ctx.CGLContextObj()
+    cgl_context = ns_ctx.CGLContextObj()
+
+    if cgl_context is None:
+        raise CGLContextNotFoundException()
+
+    return cgl_context
