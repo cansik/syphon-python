@@ -23,7 +23,19 @@ the need of a native wrapper and allows Python developers to extend the library 
 - [ ] Syphon Client On Frame Callback
 
 ## Usage
-This is a basic exmaple which shows how to share `numpy` images as a `MTLTexture` with a `SyphonMetalServer`. There are more examples under [/examples](/examples).
+To install `syphon-python` it is recommended to use a pre-built binary from PyPi:
+
+```bash
+pip install syphon-python
+```
+
+For examples using `numpy`, please also install numpy:
+
+```bash
+pip install numpy
+```
+
+The following code snippet is a basic example which shows how to share `numpy` images as a `MTLTexture` with a `SyphonMetalServer`. There are more examples under [examples](/examples).
 
 ```python
 import time
@@ -52,7 +64,10 @@ while True:
 server.stop()
 ```
 
-## Installation
+## Development
+To develop the library or install it manually, use the following commands to setup the local repository.
+
+### Installation
 
 ```bash
 # clone the repository and it's submodules
@@ -67,7 +82,7 @@ pip install numpy
 pip install opencv-python
 ```
 
-## Build
+### Build
 
 Build the Syphon-Framework on your machine:
 
@@ -75,7 +90,7 @@ Build the Syphon-Framework on your machine:
 python setup.py build
 ```
 
-## Distribute
+### Distribute
 
 Create a wheel package (also runs `build` automatically)
 
@@ -83,7 +98,7 @@ Create a wheel package (also runs `build` automatically)
 python setup.py bdist_wheel
 ```
 
-## Generate Documentation
+### Generate Documentation
 
 ```bash
 # create documentation into "./docs
