@@ -3,6 +3,10 @@ from typing import Any
 import syphon
 
 server = syphon.SyphonMetalServer("Demo")
+objc_syphon_metal_server = server.context
+
+print(dir(objc_syphon_metal_server))
+
 server = syphon.SyphonOpenGLServer("Demo")
 
 import Metal
@@ -28,3 +32,20 @@ directory = syphon.SyphonServerDirectory()
 directory.add_observer(syphon.SyphonServerNotification.Announce, handler)
 
 directory.update_run_loop()
+
+# clients
+
+# receive the first server description
+directory = syphon.SyphonServerDirectory()
+server = directory.servers[0]
+
+# create a Metal client
+client = syphon.SyphonMetalClient(server, device=mtl_device)
+
+# create an OpenGL client
+client = syphon.SyphonOpenGLClient(server)
+
+if client.has_new_frame:
+    texture = client.new_frame_image
+
+client.stop()
