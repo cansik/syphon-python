@@ -26,5 +26,5 @@ def _load_lib_bundle(bundle_name: str, scan_classes: bool = False):
 _load_lib_bundle("Syphon")
 
 from syphon.server import BaseSyphonServer, SyphonMetalServer, SyphonOpenGLServer
-from syphon.server_directory import SyphonServerDirectory
+from syphon.server_directory import SyphonServerDirectory, SyphonServerNotification, SyphonServerDescription
 from syphon.client import BaseSyphonClient, SyphonMetalClient, SyphonOpenGLClient
