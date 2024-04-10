@@ -4,8 +4,6 @@
 [![Build](https://github.com/cansik/syphon-python/actions/workflows/build.yml/badge.svg)](https://github.com/cansik/syphon-python/actions/workflows/build.yml)
 [![PyPI](https://img.shields.io/pypi/v/syphon-python)](https://pypi.org/project/syphon-python/)
 
-⚠️ This library is still *in development*.
-
 Python wrapper for the Syphon GPU texture sharing framework. This library was created to support both the Metal backend
 and the deprecated OpenGL backend. It requires **macOS 11 or above**.
 
