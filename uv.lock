@@ -23,6 +23,16 @@ wheels = [
 ]
 
 [[package]]
+name = "glfw"
+version = "2.10.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/62/096058bcb4b4fb28f7ecd28fb048f07969d90b243c417af5f6d09d45a0c2/glfw-2.10.2.tar.gz", hash = "sha256:5d2cf97c66bc42a6b583be0e307eae5a3945438322e2ed0c5e4f14dc251d693d", size = 36307, upload-time = "2026-07-21T14:42:36.732Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/80/5e575ec14f54dc0a644e7215985b9ee7c5044fcc3594d6b83dfdeb04ccd4/glfw-2.10.2-py2.py3-none-macosx_10_6_intel.whl", hash = "sha256:a04d25bb535a3a29e173ea1abd658e161681b5d3816e00bc51c122f74cd7fa3a", size = 110295, upload-time = "2026-07-21T14:42:25.625Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/2e/22216db429690aa51fa87d2e2b5e6b610c5a37b9df7768da2927f52f8704/glfw-2.10.2-py2.py3-none-macosx_11_0_arm64.whl", hash = "sha256:c000b8a5e5fb4374b2c18d12347255ccb92001b9bcf80ef74c56072acbb98fe3", size = 107146, upload-time = "2026-07-21T14:42:26.854Z" },
+]
+
+[[package]]
 name = "hatchling"
 version = "1.32.4"
 source = { registry = "https://pypi.org/simple" }
@@ -363,7 +373,6 @@ dependencies = [
     { name = "pyobjc-core" },
     { name = "pyobjc-framework-cocoa" },
     { name = "pyobjc-framework-metal" },
-    { name = "pyopengl" },
 ]
 
 [package.optional-dependencies]
@@ -371,6 +380,9 @@ numpy = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+opengl = [
+    { name = "pyopengl" },
 ]
 
 [package.dev-dependencies]
@@ -384,6 +396,7 @@ docs = [
     { name = "pdoc" },
 ]
 examples = [
+    { name = "glfw" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -401,9 +414,9 @@ requires-dist = [
     { name = "pyobjc-core", specifier = "~=12.2.2" },
     { name = "pyobjc-framework-cocoa", specifier = "~=12.2.2" },
     { name = "pyobjc-framework-metal", specifier = "~=12.2.2" },
-    { name = "pyopengl", specifier = ">=3.1.10,<4" },
+    { name = "pyopengl", marker = "extra == 'opengl'", specifier = ">=3.1.10,<4" },
 ]
-provides-extras = ["numpy"]
+provides-extras = ["opengl", "numpy"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -414,6 +427,7 @@ dev = [
 ]
 docs = [{ name = "pdoc", specifier = ">=16,<17" }]
 examples = [
+    { name = "glfw", specifier = ">=2.9,<3" },
     { name = "numpy", specifier = ">=2,<3" },
     { name = "opencv-python", specifier = ">=4.12,<5" },
 ]

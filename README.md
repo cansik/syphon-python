@@ -27,6 +27,15 @@ To install `syphon-python` it is recommended to use a prebuilt binary from PyPi:
 pip install syphon-python
 ```
 
+The default installation supports Metal without PyOpenGL. For OpenGL clients and servers, install the extra:
+
+```bash
+pip install 'syphon-python[opengl]'
+```
+
+Starting with 0.2.0, OpenGL users must explicitly request this extra. Existing Python class names and import paths
+are unchanged. The native Syphon framework retains support for both rendering backends.
+
 To run all the examples, please also install [Numpy](https://numpy.org/) and [OpenCV](https://opencv.org/):
 
 ```bash
@@ -99,6 +108,12 @@ To install example dependencies and run a Metal example:
 ```bash
 uv sync --locked --group examples
 uv run --group examples python -m examples.MetalServerExampleMini
+```
+
+For the OpenGL examples, also enable the OpenGL extra:
+
+```bash
+uv run --group examples --extra opengl python -m examples.OpenGLServerExample
 ```
 
 ### Build distributions

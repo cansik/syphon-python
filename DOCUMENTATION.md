@@ -66,6 +66,8 @@ server = syphon.SyphonMetalServer("Demo", device=mtl_device, command_queue=mtl_c
 ```
 
 ### OpenGL Server
+Install `syphon-python[opengl]` to enable OpenGL support. Metal usage does not require this extra.
+
 On initialisation, the `syphon.server.SyphonOpenGLServer` tries to find the current [cglContextObj](https://developer.apple.com/documentation/appkit/nsopenglcontext/1436158-cglcontextobj) using the current [NSOpenGLContext](https://developer.apple.com/documentation/appkit/nsopenglcontext). It is possible to override the automatic lookup by passing a valid `cglContextObj` as a parameter to the `syphon.server.SyphonOpenGLServer`.
 
 ```python
@@ -149,6 +151,8 @@ client = syphon.SyphonMetalClient(server_info, device=mtl_device)
 ```
 
 ### OpenGL Client
+Install `syphon-python[opengl]` to enable OpenGL support.
+
 As with the [opengl server](#opengl-server), it is possible to override the automatic lookup by passing a valid `cglContextObj` as a parameter to the `syphon.client.SyphonOpenGLClient`.
 
 ```python

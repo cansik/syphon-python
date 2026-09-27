@@ -4,7 +4,6 @@ from typing import Tuple, Optional, Any
 import Cocoa
 import Metal
 import objc
-from OpenGL.GL import *
 
 from syphon.types import Texture, Region, Size
 from syphon.utils import opengl
@@ -233,6 +232,8 @@ class SyphonOpenGLServer(BaseSyphonServer):
         """
         super().__init__(name)
 
+        opengl._require_pyopengl()
+
         # store CGL context object
         self.cgl_context_obj = opengl.get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
 
@@ -241,20 +242,20 @@ class SyphonOpenGLServer(BaseSyphonServer):
         self.context = SyphonOpenGLServerObjC.alloc().initWithName_context_options_(name, self.cgl_context_obj, None)
 
     def publish_frame_texture(self,
-                              texture: GLint,
+                              texture: int,
                               region: Optional[Region] = None,
                               size: Optional[Size] = None,
                               is_flipped: bool = False,
-                              target: GLenum = GL_TEXTURE_2D):
+                              target: int = opengl.GL_TEXTURE_2D):
         """
         Publish a frame with the given OpenGL texture.
 
         Parameters:
-        - texture (GLint): The OpenGL texture to publish.
+        - texture (int): The OpenGL texture identifier to publish.
         - region (Region, optional): The region of the texture to publish. Defaults to None.
         - size (Size, optional): The size of the texture. Defaults to None.
         - is_flipped (bool, optional): If True, the frame is flipped. Defaults to False.
-        - target (GLenum, optional): The OpenGL texture target. Defaults to GL_TEXTURE_2D.
+        - target (int, optional): The OpenGL texture target. Defaults to GL_TEXTURE_2D.
         """
         # create ns-region
         region, size = self._prepare_region_and_size(texture, region, size)
@@ -297,14 +298,15 @@ class SyphonOpenGLServer(BaseSyphonServer):
         Returns:
         - Size: The size of the texture.
         """
-        glBindTexture(GL_TEXTURE_2D, texture)
+        gl = opengl._require_pyopengl()
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
 
-        width = GLint()
-        height = GLint()
+        width = gl.GLint()
+        height = gl.GLint()
 
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, width)
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, height)
+        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_WIDTH, width)
+        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_HEIGHT, height)
 
-        glBindTexture(GL_TEXTURE_2D, 0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         return int(width.value), int(height.value)

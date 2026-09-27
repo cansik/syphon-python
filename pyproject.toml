@@ -26,8 +26,6 @@ dependencies = [
     "pyobjc-core~=12.2.2",
     "pyobjc-framework-Metal~=12.2.2",
     "pyobjc-framework-Cocoa~=12.2.2",
-    # Moved to an optional extra in the OpenGL migration step.
-    "PyOpenGL>=3.1.10,<4",
 ]
 
 [project.urls]
@@ -37,13 +35,14 @@ Repository = "https://github.com/cansik/syphon-python"
 Issues = "https://github.com/cansik/syphon-python/issues"
 
 [project.optional-dependencies]
+opengl = ["PyOpenGL>=3.1.10,<4"]
 numpy = ["numpy>=2,<3"]
 
 [dependency-groups]
 dev = ["ruff>=0.12", { include-group = "test" }]
 test = ["pytest>=8", "packaging>=25", "hatchling>=1.27,<2"]
 docs = ["pdoc>=16,<17"]
-examples = ["numpy>=2,<3", "opencv-python>=4.12,<5"]
+examples = ["numpy>=2,<3", "opencv-python>=4.12,<5", "glfw>=2.9,<3"]
 
 [tool.uv]
 environments = ["sys_platform == 'darwin'"]

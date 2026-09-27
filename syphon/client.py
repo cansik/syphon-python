@@ -152,6 +152,8 @@ class SyphonOpenGLClient(BaseSyphonClient):
         """
         super().__init__(description)
 
+        opengl._require_pyopengl()
+
         # store CGL context object
         self.cgl_context_obj = opengl.get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
 
