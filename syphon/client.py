@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Any
+from typing import Any, Optional
 
 import Metal
 import objc
@@ -85,14 +85,8 @@ class SyphonMetalClient(BaseSyphonClient):
         # setup syphon-metal context
         SyphonMetalClientObjC = objc.lookUpClass("SyphonMetalClient")
 
-        self.context = (
-            SyphonMetalClientObjC
-            .alloc()
-            .initWithServerDescription_device_options_newFrameHandler_(
-                description.raw,
-                self.device,
-                None,
-                None)
+        self.context = SyphonMetalClientObjC.alloc().initWithServerDescription_device_options_newFrameHandler_(
+            description.raw, self.device, None, None
         )
 
     @property
@@ -159,14 +153,8 @@ class SyphonOpenGLClient(BaseSyphonClient):
 
         # create syphon gl client
         SyphonOpenGLClientObjC = objc.lookUpClass("SyphonOpenGLClient")
-        self.context = (
-            SyphonOpenGLClientObjC
-            .alloc()
-            .initWithServerDescription_context_options_newFrameHandler_(
-                description.raw,
-                self.cgl_context_obj,
-                None,
-                None)
+        self.context = SyphonOpenGLClientObjC.alloc().initWithServerDescription_context_options_newFrameHandler_(
+            description.raw, self.cgl_context_obj, None, None
         )
 
     @property

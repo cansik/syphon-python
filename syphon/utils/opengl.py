@@ -3,8 +3,7 @@ from typing import Any
 
 import AppKit
 
-from syphon.utils.exceptions import NSOpenGLContextNotFoundException, CGLContextNotFoundException
-
+from syphon.utils.exceptions import CGLContextNotFoundException, NSOpenGLContextNotFoundException
 
 # Keep the public texture-target default available without importing PyOpenGL.
 GL_TEXTURE_2D = 0x0DE1

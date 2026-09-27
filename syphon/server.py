@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Optional, Any
+from typing import Any, Optional, Tuple
 
 import Cocoa
 import Metal
 import objc
 
-from syphon.types import Texture, Region, Size
+from syphon.types import Region, Size, Texture
 from syphon.utils import opengl
 
 
@@ -27,11 +27,9 @@ class BaseSyphonServer(ABC):
         self.name = name
 
     @abstractmethod
-    def publish_frame_texture(self,
-                              texture: Texture,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False):
+    def publish_frame_texture(
+        self, texture: Texture, region: Optional[Region] = None, size: Optional[Size] = None, is_flipped: bool = False
+    ):
         """
         Publish a frame with the given texture.
 
@@ -81,10 +79,9 @@ class BaseSyphonServer(ABC):
         """
         pass
 
-    def _prepare_region_and_size(self,
-                                 texture: Texture,
-                                 region: Optional[Region] = None,
-                                 size: Optional[Size] = None) -> Tuple[Region, Size]:
+    def _prepare_region_and_size(
+        self, texture: Texture, region: Optional[Region] = None, size: Optional[Size] = None
+    ) -> Tuple[Region, Size]:
         """
         Prepare the region and size for publishing.
 
@@ -113,10 +110,7 @@ class SyphonMetalServer(BaseSyphonServer):
     - context (Any): The Syphon-Metal context.
     """
 
-    def __init__(self,
-                 name: str,
-                 device: Optional[Any] = None,
-                 command_queue: Optional[Any] = None):
+    def __init__(self, name: str, device: Optional[Any] = None, command_queue: Optional[Any] = None):
         """
         Initialize a SyphonMetalServer.
 
@@ -142,13 +136,15 @@ class SyphonMetalServer(BaseSyphonServer):
         SyphonMetalServerObjC = objc.lookUpClass("SyphonMetalServer")
         self.context = SyphonMetalServerObjC.alloc().initWithName_device_options_(name, self.device, None)
 
-    def publish_frame_texture(self,
-                              texture: Texture,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False,
-                              command_buffer: Optional[Any] = None,
-                              auto_commit: bool = True):
+    def publish_frame_texture(
+        self,
+        texture: Texture,
+        region: Optional[Region] = None,
+        size: Optional[Size] = None,
+        is_flipped: bool = False,
+        command_buffer: Optional[Any] = None,
+        auto_commit: bool = True,
+    ):
         """
         Publish a frame with the given Metal texture.
 
@@ -169,10 +165,9 @@ class SyphonMetalServer(BaseSyphonServer):
             command_buffer = self.command_queue.commandBuffer()
 
         # publish actual texture
-        self.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_(texture,
-                                                                              command_buffer,
-                                                                              ns_region,
-                                                                              is_flipped)
+        self.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_(
+            texture, command_buffer, ns_region, is_flipped
+        )
         # commit command buffer
         if auto_commit:
             command_buffer.commitAndWaitUntilSubmitted()
@@ -241,12 +236,14 @@ class SyphonOpenGLServer(BaseSyphonServer):
         SyphonOpenGLServerObjC = objc.lookUpClass("SyphonOpenGLServer")
         self.context = SyphonOpenGLServerObjC.alloc().initWithName_context_options_(name, self.cgl_context_obj, None)
 
-    def publish_frame_texture(self,
-                              texture: int,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False,
-                              target: int = opengl.GL_TEXTURE_2D):
+    def publish_frame_texture(
+        self,
+        texture: int,
+        region: Optional[Region] = None,
+        size: Optional[Size] = None,
+        is_flipped: bool = False,
+        target: int = opengl.GL_TEXTURE_2D,
+    ):
         """
         Publish a frame with the given OpenGL texture.
 
@@ -262,9 +259,9 @@ class SyphonOpenGLServer(BaseSyphonServer):
         ns_region = Cocoa.NSRect((region[0], region[1]), (region[2], region[3]))
         ns_size = Cocoa.NSSize(size[0], size[1])
 
-        self.context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_(texture, target,
-                                                                                              ns_region,
-                                                                                              ns_size, is_flipped)
+        self.context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_(
+            texture, target, ns_region, ns_size, is_flipped
+        )
 
     def publish(self):
         """

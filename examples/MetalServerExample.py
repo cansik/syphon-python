@@ -1,6 +1,7 @@
-from itertools import islice, cycle
+from itertools import cycle, islice
 
 import Metal
+
 import syphon
 
 
@@ -37,7 +38,7 @@ def main():
             region,
             0,  # mipmapLevel
             pixels,
-            bytes_per_row
+            bytes_per_row,
         )
 
         # publish texture

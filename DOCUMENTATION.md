@@ -35,7 +35,7 @@ server = syphon.SyphonOpenGLServer("Demo")
 To publish a texture, the method `syphon.server.BaseSyphonServer.publish_frame_texture()` can be used. We assume that the corresponding texture has already been created and is available in the `texture` variable. To see how to create and fill a MTLTexture or glTexture, please have a look at the [examples](https://github.com/cansik/syphon-python/tree/main/examples).
 
 ```python
-texture = ... # MTLTexture or glTexture
+texture = ...  # MTLTexture or glTexture
 server.publish_frame_texture(texture)
 ```
 
@@ -130,7 +130,7 @@ To get textures, it is possible to first check if the server has provided a new 
 
 ```python
 if client.has_new_frame:
-    texture = client.new_frame_image # either MTLTexture or glTexture
+    texture = client.new_frame_image  # either MTLTexture or glTexture
 ```
 
 To stop the client and disconnect from the server, the `syphon.client.BaseSyphonClient.stop()` method can be used.
@@ -188,7 +188,7 @@ To write `bytes` to an [MTLTexture](https://developer.apple.com/documentation/me
 from syphon.utils.raw import copy_bytes_to_mtl_texture
 
 data = ...  # bytes() based buffer
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
 copy_bytes_to_mtl_texture(data, texture)
 ```
@@ -198,9 +198,9 @@ To read `bytes` from an [MTLTexture](https://developer.apple.com/documentation/m
 ```python
 from syphon.utils.raw import copy_mtl_texture_to_bytes
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
-data = copy_mtl_texture_to_bytes(texture) # returns bytes
+data = copy_mtl_texture_to_bytes(texture)  # returns bytes
 ```
 
 ### Numpy
@@ -214,7 +214,7 @@ To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mt
 import numpy as np
 from syphon.utils.numpy import copy_image_to_mtl_texture
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
 # create RGBA image
 texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
@@ -229,9 +229,9 @@ To read a numpy image from a MTLTexture, the `syphon.utils.numpy.copy_mtl_textur
 import numpy as np
 from syphon.utils.numpy import copy_mtl_texture_to_image
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
-texture_data = copy_mtl_texture_to_image(texture) # returns numpy array
+texture_data = copy_mtl_texture_to_image(texture)  # returns numpy array
 ```
 
 ## Python Binding

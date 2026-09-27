@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Any, List, Optional
+from typing import Any, Callable, List, Optional
 
 import objc
-from Cocoa import NSRunLoop, NSDefaultRunLoopMode, NSDate, NSImage
+from Cocoa import NSDate, NSDefaultRunLoopMode, NSImage, NSRunLoop
 
 
 class SyphonServerNotification(Enum):
@@ -15,6 +15,7 @@ class SyphonServerNotification(Enum):
     - Update: An existing SyphonServer instance has changed its description.
     - Retire: A SyphonServer instance will no longer be available.
     """
+
     Announce = "SyphonServerAnnounceNotification"
     Update = "SyphonServerUpdateNotification"
     Retire = "SyphonServerRetireNotification"
@@ -32,6 +33,7 @@ class SyphonServerDescription:
     - icon (NSImage): The icon image of the Syphon server.
     - raw (Any): The raw server information.
     """
+
     uuid: str
     name: str
     app_name: str
@@ -64,12 +66,7 @@ class SyphonServerDirectory:
         - notification (SyphonServerNotification): The notification to observe.
         - handler (Callable[[Any], None]): The handler function to be called when the notification is received.
         """
-        self._notification_center.addObserverForName_object_queue_usingBlock_(
-            notification.value,
-            None,
-            None,
-            handler
-        )
+        self._notification_center.addObserverForName_object_queue_usingBlock_(notification.value, None, None, handler)
 
     @property
     def servers(self) -> List[SyphonServerDescription]:
@@ -89,7 +86,7 @@ class SyphonServerDirectory:
                 str(s["SyphonServerDescriptionNameKey"]),
                 str(s["SyphonServerDescriptionAppNameKey"]),
                 s["SyphonServerDescriptionIconKey"],
-                s
+                s,
             )
             for s in servers
         ]
@@ -99,13 +96,12 @@ class SyphonServerDirectory:
         Update the run loop to process events.
         """
         NSRunLoop.currentRunLoop().runMode_beforeDate_(
-            NSDefaultRunLoopMode,
-            NSDate.dateWithTimeIntervalSinceNow_(self.run_loop_interval)
+            NSDefaultRunLoopMode, NSDate.dateWithTimeIntervalSinceNow_(self.run_loop_interval)
         )
 
-    def servers_matching_name(self,
-                              name: Optional[str] = None,
-                              app_name: Optional[str] = None) -> List[SyphonServerDescription]:
+    def servers_matching_name(
+        self, name: Optional[str] = None, app_name: Optional[str] = None
+    ) -> List[SyphonServerDescription]:
         """
         Get a list of Syphon servers that match the specified name or application name.
 

@@ -1,5 +1,7 @@
 from typing import Any
 
+import Metal
+
 import syphon
 
 server = syphon.SyphonMetalServer("Demo")
@@ -8,8 +10,6 @@ objc_syphon_metal_server = server.context
 print(dir(objc_syphon_metal_server))
 
 server = syphon.SyphonOpenGLServer("Demo")
-
-import Metal
 
 mtl_device = Metal.MTLCreateSystemDefaultDevice()
 server = syphon.SyphonMetalServer("Demo", device=mtl_device)

@@ -4,10 +4,7 @@ from typing import Any, Optional
 import Metal
 
 
-def create_mtl_texture(device: Any,
-                       width: int,
-                       height: int,
-                       pixel_format: int = Metal.MTLPixelFormatRGBA8Unorm) -> Any:
+def create_mtl_texture(device: Any, width: int, height: int, pixel_format: int = Metal.MTLPixelFormatRGBA8Unorm) -> Any:
     """
     Create a Metal texture with the specified parameters.
 
@@ -42,7 +39,7 @@ def copy_bytes_to_mtl_texture(data: bytes, texture: Any):
         region,
         0,  # mipmapLevel
         data,
-        bytes_per_row
+        bytes_per_row,
     )
 
 
@@ -61,8 +58,10 @@ def copy_mtl_texture_to_bytes(texture: Any, buffer: Optional[Any] = None) -> byt
     - Exception: If the pixel format of the texture is not MTLPixelFormatBGRA8Unorm or MTLPixelFormatRGBA8Unorm.
     - Exception: If the provided buffer is not big enough.
     """
-    if (texture.pixelFormat() != Metal.MTLPixelFormatBGRA8Unorm
-            and texture.pixelFormat() != Metal.MTLPixelFormatRGBA8Unorm):
+    if (
+        texture.pixelFormat() != Metal.MTLPixelFormatBGRA8Unorm
+        and texture.pixelFormat() != Metal.MTLPixelFormatRGBA8Unorm
+    ):
         raise Exception("Not correct pixel format (expected MTLPixelFormatBGRA8Unorm or MTLPixelFormatRGBA8Unorm)")
 
     bytes_per_row = texture.width() * 4
@@ -77,12 +76,9 @@ def copy_mtl_texture_to_bytes(texture: Any, buffer: Optional[Any] = None) -> byt
     if len(buffer) != bytes_per_image:
         raise Exception(f"Buffer is not big enough (expected: {bytes_per_image}, actual: {len(buffer)})")
 
-    texture.getBytes_bytesPerRow_bytesPerImage_fromRegion_mipmapLevel_slice_(buffer,
-                                                                             bytes_per_row,
-                                                                             bytes_per_image,
-                                                                             region,
-                                                                             mipmap_level,
-                                                                             slice_number)
+    texture.getBytes_bytesPerRow_bytesPerImage_fromRegion_mipmapLevel_slice_(
+        buffer, bytes_per_row, bytes_per_image, region, mipmap_level, slice_number
+    )
 
     raw_bytes = bytes(buffer.raw)
     return raw_bytes

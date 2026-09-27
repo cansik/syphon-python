@@ -3,7 +3,7 @@ import re
 import shutil
 import sys
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 import pdoc
 import pdoc.web
@@ -11,7 +11,7 @@ from jinja2 import pass_context
 from jinja2.runtime import Context
 from markupsafe import Markup
 from pdoc._compat import removesuffix
-from pdoc.render_helpers import qualname_candidates, possible_sources, relative_link
+from pdoc.render_helpers import possible_sources, qualname_candidates, relative_link
 
 
 @pass_context
@@ -24,9 +24,7 @@ def custom_linkify(context: Context, code: str, namespace: str = "") -> str:
 
     def linkify_repl(m: re.Match):
         text = m.group(0)
-        plain_text = text.replace(
-            '</span><span class="o">.</span><span class="n">', "."
-        )
+        plain_text = text.replace('</span><span class="o">.</span><span class="n">', ".")
         identifier = removesuffix(plain_text, "()")
         mod: pdoc.doc.Module = context["module"]
 
@@ -57,15 +55,9 @@ def custom_linkify(context: Context, code: str, namespace: str = "") -> str:
         qualname = ""
         try:
             # Check if the object we are interested in is imported and re-exposed in the current namespace.
-            for module, qualname in possible_sources(
-                context["all_modules"], identifier
-            ):
+            for module, qualname in possible_sources(context["all_modules"], identifier):
                 doc = mod.get(qualname)
-                if (
-                    doc
-                    and doc.taken_from == (module, qualname)
-                    and context["is_public"](doc).strip()
-                ):
+                if doc and doc.taken_from == (module, qualname) and context["is_public"](doc).strip():
                     if plain_text.endswith("()"):
                         plain_text = f"{doc.qualname}()"
                     else:
@@ -80,9 +72,7 @@ def custom_linkify(context: Context, code: str, namespace: str = "") -> str:
             if qualname:
                 assert isinstance(doc, pdoc.doc.Module)
                 doc = doc.get(qualname)
-            target_exists_and_public = (
-                doc is not None and context["is_public"](doc).strip()
-            )
+            target_exists_and_public = doc is not None and context["is_public"](doc).strip()
             if target_exists_and_public:
                 assert doc is not None  # mypy
                 if qualname:
@@ -130,14 +120,16 @@ def custom_linkify(context: Context, code: str, namespace: str = "") -> str:
     )
 
 
-def generate_doc(package_name: str,
-                 package_version: str,
-                 package_url: Optional[str],
-                 required_packages: List[str],
-                 output_path: Union[str, os.PathLike],
-                 package_paths: List[Union[str, os.PathLike]],
-                 extra_asset_path: Union[str, os.PathLike] = "doc",
-                 launch: bool = False):
+def generate_doc(
+    package_name: str,
+    package_version: str,
+    package_url: Optional[str],
+    required_packages: List[str],
+    output_path: Union[str, os.PathLike],
+    package_paths: List[Union[str, os.PathLike]],
+    extra_asset_path: Union[str, os.PathLike] = "doc",
+    launch: bool = False,
+):
     output_path = Path(output_path)
     extra_asset_path = Path(extra_asset_path)
 
@@ -150,7 +142,7 @@ def generate_doc(package_name: str,
     pdoc.render.configure(
         footer_text=f"{package_name} v{package_version}",
         logo_link=package_url,
-        template_directory=extra_asset_path.joinpath("theme")
+        template_directory=extra_asset_path.joinpath("theme"),
     )
 
     # add additional filters
@@ -174,9 +166,7 @@ def generate_doc(package_name: str,
                 # Couldn't bind, let's try again with a random port.
                 httpd = pdoc.web.DocServer((host, port or 0), package_paths)
         except OSError as e:
-            print(
-                f"Cannot start web server on {host}:{port}: {e}"
-            )
+            print(f"Cannot start web server on {host}:{port}: {e}")
             sys.exit(1)
 
         with httpd:
