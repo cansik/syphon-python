@@ -7,6 +7,9 @@
 Python wrapper for the Syphon GPU texture sharing framework. This library was created to support both the Metal backend
 and the deprecated OpenGL backend. It requires **macOS 12 or above** and **Python 3.10 or above**.
 
+Supported Python versions are **3.10–3.14**, including the **3.13t and 3.14t** free-threaded builds.
+Prerelease Python versions are outside the support and CI test matrix.
+
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
 [Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
 native wrapper and allows Python developers to extend the library as needed.
@@ -144,12 +147,27 @@ python -m pip install ./dist/syphon_python-0.2.0.tar.gz
 ```bash
 uv run pytest
 
+# validate packaged resources, metadata, and both native architectures
+uv build
+uv run pytest --dist-dir dist
+
 # check Python code without changing it
 uv run ruff check .
 uv run ruff format --check .
 
 # apply formatting locally
 uv run ruff format .
+```
+
+Run optional NumPy and OpenGL tests with `uv run --extra numpy --extra opengl pytest`.
+Metal integration tests run when a Metal device is available; use `-m 'not metal'` to exclude them.
+Free-threaded test runs fail if a dependency enables the GIL. Distribution checks skip unless
+`--dist-dir` is supplied, and optional-dependency tests skip when their extra is not installed.
+
+To test a different interpreter, specify it explicitly, for example:
+
+```bash
+uv run --python 3.14t --extra numpy --extra opengl pytest
 ```
 
 ### Generate Documentation

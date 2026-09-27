@@ -65,7 +65,7 @@ path = "hatch_build.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/syphon", "/vendor/Syphon", "/hatch_build.py", "/tests",
+    "/syphon", "/vendor/Syphon", "/hatch_build.py", "/conftest.py", "/tests",
     "/scripts", "/doc", "/examples", "/pyproject.toml",
     "/README.md", "/DOCUMENTATION.md", "/LICENSE",
 ]
