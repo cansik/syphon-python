@@ -1,48 +1,49 @@
-name: Publish Docs
+name: Publish documentation
 
-# build the documentation whenever there are new commits on main
 on:
   workflow_dispatch:
   push:
-    # Alternative: only build for tags.
-    tags:
-      - '*'
+    tags: ['v*']
 
-# security: restrict permissions for CI jobs.
 permissions:
   contents: read
 
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
 jobs:
-  # Build the documentation and upload the static HTML files as an artifact.
   build:
-    runs-on: 'macos-latest'
+    runs-on: macos-15
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: '3.10'
-
-      - name: Preqrequisites
-        run: |
-          git submodule update --init --recursive
-
-      # install relevant files
-      - run: pip install -r dev-requirements.txt
-      - run: pip install -r requirements.txt
-      - run: python setup.py build
-
-      # build documentation into docs/.
-      - run: python setup.py doc
-
-      - uses: actions/upload-pages-artifact@v2
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        id: python
         with:
-          path: docs/
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.11.29'
+      - name: Ensure the Xcode Metal compiler is available
+        run: xcrun metal --version || xcodebuild -downloadComponent MetalToolchain
+      - name: Install documentation dependencies
+        env:
+          UV_PYTHON: ${{ steps.python.outputs.python-path }}
+        run: uv sync --locked --no-dev --group docs --extra numpy
+      - name: Generate documentation
+        run: uv run --no-sync pdoc syphon -o docs
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs
 
-  # Deploy the artifact to GitHub pages.
-  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       pages: write
       id-token: write
@@ -51,4 +52,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

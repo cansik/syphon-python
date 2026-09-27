@@ -180,6 +180,9 @@ uv run --group docs --extra numpy pdoc syphon -o docs
 uv run --group docs --extra numpy pdoc syphon
 ```
 
+CI checks builds, tests, formatting, and documentation on pushes and pull requests.
+For publishing instructions, see the [maintainer guide](.github/RELEASING.md).
+
 ## About
 
 MIT License - Copyright (c) 2024 Florian Bruggisser
