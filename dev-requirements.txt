@@ -1,4 +1,0 @@
-wheel
-pdoc~=14.1.0
-opencv-python
-numpy

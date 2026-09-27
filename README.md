@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/syphon-python)](https://pypi.org/project/syphon-python/)
 
 Python wrapper for the Syphon GPU texture sharing framework. This library was created to support both the Metal backend
-and the deprecated OpenGL backend. It requires **macOS 11 or above**.
+and the deprecated OpenGL backend. It requires **macOS 12 or above** and **Python 3.10 or above**.
 
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
 [Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
@@ -63,47 +63,88 @@ server.stop()
 ```
 
 ## Development
-To develop or manually install the library, use the following commands to set up the local repository.
+
+Development uses [uv](https://docs.astral.sh/uv/) and Python 3.14. Building from source requires
+full Xcode, including its Metal toolchain; Command Line Tools alone are not sufficient.
+Installing a prebuilt wheel does not require Xcode.
 
 ### Installation
 
 ```bash
-# clone the repository and it's submodules
+# clone the repository and its submodules
 git clone --recurse-submodules https://github.com/cansik/syphon-python.git
+cd syphon-python
 
-# install dependencies
-pip install -r dev-requirements.txt
-pip install -r requirements.txt
-
-# for some examples the following dependencies are needed
-pip install numpy
-pip install opencv-python
+# install the project in editable mode and its development/test dependencies
+uv sync --locked
 ```
 
-### Build
+For an existing checkout, run `git submodule update --init --recursive` before `uv sync`.
+The editable installation compiles Syphon automatically. Python edits are immediately available;
+after native source changes, run `uv sync --locked --reinstall-package syphon-python` to rebuild.
 
-Build the Syphon framework on your machine:
+The build uses your selected Xcode installation automatically. If Command Line Tools are selected,
+it finds Xcode at `/Applications/Xcode.app`; no environment export or system setting change is needed.
+If Xcode reports a missing Metal toolchain, install **Metal Toolchain** in **Xcode > Settings > Components**
+and retry. Complete any first-launch setup requested by Xcode.
+
+For an Xcode installation in a custom location, you can override the selection for one command:
 
 ```bash
-python setup.py build
+DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer uv build
 ```
 
-### Distribute
-
-Create a wheel package (also runs `build` automatically)
+To install example dependencies and run a Metal example:
 
 ```bash
-python setup.py bdist_wheel
+uv sync --locked --group examples
+uv run --group examples python -m examples.MetalServerExampleMini
+```
+
+### Build distributions
+
+From the repository root:
+
+```bash
+uv build
+```
+
+This creates a source archive and builds a wheel from that archive in `dist/`:
+
+- `syphon_python-0.2.0.tar.gz`
+- `syphon_python-0.2.0-py3-none-macosx_12_0_universal2.whl`
+
+The wheel contains the compiled Syphon framework for both Apple Silicon and Intel, targets macOS 12,
+and can be installed across supported Python versions without rebuilding Syphon.
+The source archive includes the vendored Syphon sources, so it can be built without Git or submodules.
+
+To install the local source archive into an activated virtual environment:
+
+```bash
+python -m pip install ./dist/syphon_python-0.2.0.tar.gz
+```
+
+### Tests and formatting
+
+```bash
+uv run pytest
+
+# check Python code without changing it
+uv run ruff check .
+uv run ruff format --check .
+
+# apply formatting locally
+uv run ruff format .
 ```
 
 ### Generate Documentation
 
 ```bash
-# create documentation into "./docs
-python setup.py doc
+# generate HTML into docs/
+uv run --group docs --extra numpy pdoc syphon -o docs
 
-# launch pdoc webserver
-python setup.py doc --launch
+# launch the local documentation server
+uv run --group docs --extra numpy pdoc syphon
 ```
 
 ## About
