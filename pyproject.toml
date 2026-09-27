@@ -76,6 +76,7 @@ exclude = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["metal: native integration tests requiring a Metal device"]
 
 [tool.ruff]
 target-version = "py310"
