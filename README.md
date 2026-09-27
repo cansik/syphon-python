@@ -12,7 +12,7 @@ Prerelease Python versions are outside the support and CI test matrix.
 
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
 [Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
-native wrapper and allows Python developers to extend the library as needed.
+the native wrapper layer and allows Python developers to extend the library as needed.
 
 ## State of Development
 
@@ -24,7 +24,7 @@ native wrapper and allows Python developers to extend the library as needed.
 - [ ] Syphon Client On Frame Callback
 
 ## Usage
-To install `syphon-python` it is recommended to use a prebuilt binary from PyPi:
+To install `syphon-python` it is recommended to use a prebuilt binary from PyPI:
 
 ```bash
 pip install syphon-python
@@ -39,13 +39,13 @@ pip install 'syphon-python[opengl]'
 Starting with 0.2.0, OpenGL users must explicitly request this extra. Existing Python class names and import paths
 are unchanged. The native Syphon framework retains support for both rendering backends.
 
-To run all the examples, please also install [Numpy](https://numpy.org/) and [OpenCV](https://opencv.org/):
+For NumPy texture helpers and the following example, install the NumPy extra:
 
 ```bash
-pip install numpy opencv-python
+pip install 'syphon-python[numpy]'
 ```
 
-The following code snippet is a basic example showing how to share `numpy` images as `MTLTexture` with a `SyphonMetalServer`. There are more examples in [examples](/examples).
+The following code snippet is a basic example showing how to share `numpy` images as `MTLTexture` with a `SyphonMetalServer`. There are more examples in [examples](https://github.com/cansik/syphon-python/tree/main/examples).
 
 ```python
 import time
@@ -174,14 +174,19 @@ uv run --python 3.14t --extra numpy --extra opengl pytest
 
 ```bash
 # generate HTML into docs/
-uv run --group docs --extra numpy pdoc syphon -o docs
+uv run --group docs --extra numpy python scripts/generate_doc.py
 
 # launch the local documentation server
-uv run --group docs --extra numpy pdoc syphon
+uv run --group docs --extra numpy python scripts/generate_doc.py --serve
 ```
 
 CI checks builds, tests, formatting, and documentation on pushes and pull requests.
-For publishing instructions, see the [maintainer guide](.github/RELEASING.md).
+For publishing instructions, see the [maintainer guide](https://github.com/cansik/syphon-python/blob/main/.github/RELEASING.md).
+
+## Citation
+
+If you use syphon-python in research, please cite it using the metadata in
+[CITATION.cff](https://github.com/cansik/syphon-python/blob/main/CITATION.cff).
 
 ## About
 

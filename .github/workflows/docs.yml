@@ -35,7 +35,7 @@ jobs:
           UV_PYTHON: ${{ steps.python.outputs.python-path }}
         run: uv sync --locked --no-dev --group docs --extra numpy
       - name: Generate documentation
-        run: uv run --no-sync pdoc syphon -o docs
+        run: uv run --no-sync python scripts/generate_doc.py
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: docs

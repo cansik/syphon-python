@@ -206,7 +206,7 @@ data = copy_mtl_texture_to_bytes(texture)  # returns bytes
 ### Numpy
 If you are working with [Numpy](https://numpy.org/) arrays, the `syphon.utils.numpy` package contains helper methods for reading and writing numpy images to and from [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture).
 
-It is important to note that the `numpy` package is not installed by default, it must be installed using `pip install numpy`.
+It is important to note that the `numpy` package is not installed by default, it must be installed using `pip install 'syphon-python[numpy]'`.
 
 To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mtl_texture()` method can be used.
 

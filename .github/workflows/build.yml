@@ -47,7 +47,7 @@ jobs:
       - name: Validate distributions
         run: uv run --no-sync pytest tests/test_distributions.py --dist-dir dist
       - name: Build documentation
-        run: uv run --no-sync pdoc syphon -o docs
+        run: uv run --no-sync python scripts/generate_doc.py
       - name: Read package version
         id: metadata
         run: |
