@@ -75,7 +75,10 @@ exclude = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["metal: native integration tests requiring a Metal device"]
+markers = [
+    "metal: native integration tests requiring a Metal device",
+    "opengl: native integration tests requiring an OpenGL context and the opengl extra",
+]
 
 [tool.ruff]
 target-version = "py310"

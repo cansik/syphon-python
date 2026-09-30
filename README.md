@@ -21,7 +21,10 @@ the native wrapper layer and allows Python developers to extend the library as n
 - [x] Metal Client
 - [x] OpenGL Server
 - [x] OpenGL Client
-- [ ] Syphon Client On Frame Callback
+- [x] Syphon Client On Frame Callback
+- [x] Async frame waiting and lifecycle context managers
+- [x] Private servers and live output names
+- [x] Direct OpenGL framebuffer rendering
 
 ## Usage
 To install `syphon-python` it is recommended to use a prebuilt binary from PyPI:
@@ -56,23 +59,34 @@ import syphon
 from syphon.utils.numpy import copy_image_to_mtl_texture
 from syphon.utils.raw import create_mtl_texture
 
-# create server and texture
-server = syphon.SyphonMetalServer("Demo")
-texture = create_mtl_texture(server.device, 512, 512)
+# Create the server; the context manager stops it when we exit.
+with syphon.SyphonMetalServer("Demo") as server, syphon.SyphonServerDirectory() as directory:
+    directory.run_loop_interval = 0.001
 
-# create texture data
-texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
-texture_data[:, :, 0] = 255  # fill red
-texture_data[:, :, 3] = 255  # fill alpha
+    # Create a texture on the server's Metal device.
+    texture = create_mtl_texture(server.device, 512, 512)
 
-while True:
-    # copy texture data to texture and publish frame
-    copy_image_to_mtl_texture(texture_data, texture)
-    server.publish_frame_texture(texture)
-    time.sleep(1)
+    # Create an opaque red RGBA image.
+    texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
+    texture_data[:, :, 0] = 255  # fill red
+    texture_data[:, :, 3] = 255  # fill alpha
 
-server.stop()
+    try:
+        while True:
+            # Copy the image onto the texture and publish it.
+            copy_image_to_mtl_texture(texture_data, texture)
+            server.publish_frame_texture(texture)
+
+            # Process discovery requests even though there is no window.
+            directory.update_run_loop()
+            time.sleep(1 / 60)
+    except KeyboardInterrupt:
+        pass
 ```
+
+Headless servers must process Cocoa events to respond to discovery requests from clients started
+later. Call `directory.update_run_loop()` regularly on the main thread; no window is required.
+Sleeping alone does not process those events.
 
 ## Development
 
@@ -160,7 +174,8 @@ uv run ruff format .
 ```
 
 Run optional NumPy and OpenGL tests with `uv run --extra numpy --extra opengl pytest`.
-Metal integration tests run when a Metal device is available; use `-m 'not metal'` to exclude them.
+Metal and OpenGL integration tests run when their devices/contexts are available.
+Use `-m 'not metal and not opengl'` to exclude native rendering tests.
 Free-threaded test runs fail if a dependency enables the GIL. Distribution checks skip unless
 `--dist-dir` is supplied, and optional-dependency tests skip when their extra is not installed.
 
@@ -190,4 +205,4 @@ If you use syphon-python in research, please cite it using the metadata in
 
 ## About
 
-MIT License - Copyright (c) 2024 Florian Bruggisser
+MIT License - Copyright (c) 2026 Florian Bruggisser

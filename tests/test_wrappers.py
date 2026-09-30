@@ -89,7 +89,7 @@ def test_directory_converts_native_descriptions():
 
 
 def test_directory_registers_notification_handler():
-    directory = SyphonServerDirectory.__new__(SyphonServerDirectory)
+    directory = SyphonServerDirectory()
     directory._notification_center = Mock()
     handler = Mock()
     directory.add_observer(SyphonServerNotification.Announce, handler)

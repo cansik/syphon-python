@@ -1,4 +1,6 @@
-from itertools import cycle, islice
+"""Publish Metal frames while servicing Cocoa discovery notifications."""
+
+import time
 
 import Metal
 
@@ -7,45 +9,39 @@ import syphon
 
 def main():
     print("starting server...")
-    server = syphon.SyphonMetalServer("Metal Test")
+    with syphon.SyphonMetalServer("Metal Test") as server, syphon.SyphonServerDirectory() as directory:
+        directory.run_loop_interval = 0.001
 
-    # create texture and load image onto texture
-    texture_width, texture_height = 640, 480
-
-    # Create Metal texture descriptor
-    texture_descriptor = Metal.MTLTextureDescriptor.texture2DDescriptorWithPixelFormat_width_height_mipmapped_(
-        Metal.MTLPixelFormatRGBA8Unorm, texture_width, texture_height, False
-    )
-
-    # Create a Metal texture using server internal device
-    metal_texture = server.device.newTextureWithDescriptor_(texture_descriptor)
-
-    region = Metal.MTLRegion((0, 0, 0), (texture_width, texture_height, 1))
-    bytes_per_row = texture_width * 4
-
-    # changing color value
-    value = 0
-
-    running = True
-    print("publishing...")
-    while running:
-        # generate random pixels
-        value = (value + 1) % 255
-        pixels = bytes(islice(cycle([value, 255 - value, 255, 255]), texture_width * texture_height * 4))
-
-        # copy pixels onto texture
-        metal_texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow_(
-            region,
-            0,  # mipmapLevel
-            pixels,
-            bytes_per_row,
+        # Describe the size and pixel format of the texture.
+        width, height = 640, 480
+        descriptor = Metal.MTLTextureDescriptor.texture2DDescriptorWithPixelFormat_width_height_mipmapped_(
+            Metal.MTLPixelFormatRGBA8Unorm, width, height, False
         )
+        # Create the texture on the server's Metal device.
+        texture = server.device.newTextureWithDescriptor_(descriptor)
+        region = Metal.MTLRegion((0, 0, 0), (width, height, 1))
+        value = 0
+        print("publishing... (Ctrl+C to stop)")
+        while True:
+            started = time.monotonic()
 
-        # publish texture
-        server.publish_frame_texture(metal_texture)
+            # Fill the image with a changing RGBA color.
+            value = (value + 1) % 255
+            pixels = bytes((value, 255 - value, 255, 255)) * (width * height)
 
-    server.stop()
+            # Copy the pixels onto the texture and publish it.
+            texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow_(region, 0, pixels, width * 4)
+            server.publish_frame_texture(texture)
+
+            # Headless applications must service Cocoa notifications for discovery.
+            directory.update_run_loop()
+
+            # Limit publishing to approximately 60 frames per second.
+            time.sleep(max(0, 1 / 60 - (time.monotonic() - started)))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
