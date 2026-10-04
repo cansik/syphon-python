@@ -5,10 +5,8 @@
 [![PyPI](https://img.shields.io/pypi/v/syphon-python)](https://pypi.org/project/syphon-python/)
 
 Python wrapper for the Syphon GPU texture sharing framework. This library was created to support both the Metal backend
-and the deprecated OpenGL backend. It requires **macOS 12 or above** and **Python 3.10 or above**.
-
-Supported Python versions are **3.10–3.14**, including the **3.13t and 3.14t** free-threaded builds.
-Prerelease Python versions are outside the support and CI test matrix.
+and the deprecated OpenGL backend. It requires **macOS 12 or above** and supports **Python 3.10–3.14**,
+including the free-threaded **3.13t and 3.14t** builds.
 
 The implementation is based on [PyObjC](https://github.com/ronaldoussoren/pyobjc) to wrap the
 [Syphon framework](https://github.com/Syphon/Syphon-Framework) directly from Python. This approach eliminates
@@ -22,9 +20,10 @@ the native wrapper layer and allows Python developers to extend the library as n
 - [x] OpenGL Server
 - [x] OpenGL Client
 - [x] Syphon Client On Frame Callback
-- [x] Async frame waiting and lifecycle context managers
-- [x] Private servers and live output names
-- [x] Direct OpenGL framebuffer rendering
+- [x] Async Frame Waiting
+- [x] Context Managers
+- [x] Private Servers and Server Renaming
+- [x] Direct OpenGL Rendering
 
 ## Usage
 To install `syphon-python` it is recommended to use a prebuilt binary from PyPI:
@@ -33,16 +32,13 @@ To install `syphon-python` it is recommended to use a prebuilt binary from PyPI:
 pip install syphon-python
 ```
 
-The default installation supports Metal without PyOpenGL. For OpenGL clients and servers, install the extra:
+Since version 0.2.0, PyOpenGL is optional. To use the OpenGL backend, install it with:
 
 ```bash
 pip install 'syphon-python[opengl]'
 ```
 
-Starting with 0.2.0, OpenGL users must explicitly request this extra. Existing Python class names and import paths
-are unchanged. The native Syphon framework retains support for both rendering backends.
-
-For NumPy texture helpers and the following example, install the NumPy extra:
+To work with NumPy images, as shown in the following example, also install the NumPy dependency:
 
 ```bash
 pip install 'syphon-python[numpy]'
@@ -59,40 +55,39 @@ import syphon
 from syphon.utils.numpy import copy_image_to_mtl_texture
 from syphon.utils.raw import create_mtl_texture
 
-# Create the server; the context manager stops it when we exit.
+# create the server and stop it automatically when leaving the block
 with syphon.SyphonMetalServer("Demo") as server, syphon.SyphonServerDirectory() as directory:
     directory.run_loop_interval = 0.001
 
-    # Create a texture on the server's Metal device.
+    # create a texture on the server's Metal device
     texture = create_mtl_texture(server.device, 512, 512)
 
-    # Create an opaque red RGBA image.
+    # create an opaque red RGBA image
     texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
     texture_data[:, :, 0] = 255  # fill red
     texture_data[:, :, 3] = 255  # fill alpha
 
     try:
         while True:
-            # Copy the image onto the texture and publish it.
+            # copy the image onto the texture and publish it
             copy_image_to_mtl_texture(texture_data, texture)
             server.publish_frame_texture(texture)
 
-            # Process discovery requests even though there is no window.
+            # process discovery requests without opening a window
             directory.update_run_loop()
             time.sleep(1 / 60)
     except KeyboardInterrupt:
         pass
 ```
 
-Headless servers must process Cocoa events to respond to discovery requests from clients started
-later. Call `directory.update_run_loop()` regularly on the main thread; no window is required.
-Sleeping alone does not process those events.
+For applications without a UI, `directory.update_run_loop()` processes Cocoa events on the main thread
+so that other applications can discover the server. Calling it regularly keeps the server discoverable.
 
 ## Development
 
-Development uses [uv](https://docs.astral.sh/uv/) and Python 3.14. Building from source requires
-full Xcode, including its Metal toolchain; Command Line Tools alone are not sufficient.
-Installing a prebuilt wheel does not require Xcode.
+To develop or manually build the library, use [uv](https://docs.astral.sh/uv/) and Python 3.14 to set up
+the local repository. Building the Syphon framework requires full Xcode with its Metal toolchain;
+Command Line Tools alone are not sufficient. Installing a prebuilt wheel does not require Xcode.
 
 ### Installation
 
@@ -101,106 +96,102 @@ Installing a prebuilt wheel does not require Xcode.
 git clone --recurse-submodules https://github.com/cansik/syphon-python.git
 cd syphon-python
 
-# install the project in editable mode and its development/test dependencies
+# install the library and development dependencies
 uv sync --locked
 ```
 
-For an existing checkout, run `git submodule update --init --recursive` before `uv sync`.
-The editable installation compiles Syphon automatically. Python edits are immediately available;
-after native source changes, run `uv sync --locked --reinstall-package syphon-python` to rebuild.
+This builds the framework and installs the library in editable mode, so Python changes are immediately
+available. For an existing checkout, run `git submodule update --init --recursive` first.
 
-The build uses your selected Xcode installation automatically. If Command Line Tools are selected,
-it finds Xcode at `/Applications/Xcode.app`; no environment export or system setting change is needed.
-If Xcode reports a missing Metal toolchain, install **Metal Toolchain** in **Xcode > Settings > Components**
-and retry. Complete any first-launch setup requested by Xcode.
-
-For an Xcode installation in a custom location, you can override the selection for one command:
-
-```bash
-DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer uv build
-```
-
-To install example dependencies and run a Metal example:
+To install the additional dependencies used by the examples:
 
 ```bash
 uv sync --locked --group examples
+
+# run a Metal example
 uv run --group examples python -m examples.MetalServerExampleMini
-```
 
-For the OpenGL examples, also enable the OpenGL extra:
-
-```bash
+# run an OpenGL example with the optional dependency
 uv run --group examples --extra opengl python -m examples.OpenGLServerExample
 ```
 
-### Build distributions
+### Build
 
-From the repository root:
+Create a source archive and a wheel package in `dist/`:
 
 ```bash
 uv build
 ```
 
-This creates a source archive and builds a wheel from that archive in `dist/`:
-
-- `syphon_python-0.2.0.tar.gz`
-- `syphon_python-0.2.0-py3-none-macosx_12_0_universal2.whl`
-
-The wheel contains the compiled Syphon framework for both Apple Silicon and Intel, targets macOS 12,
-and can be installed across supported Python versions without rebuilding Syphon.
-The source archive includes the vendored Syphon sources, so it can be built without Git or submodules.
-
-To install the local source archive into an activated virtual environment:
+The wheel includes the Syphon framework for both Apple Silicon and Intel. The source archive includes
+the framework sources, so it can also be built without cloning the repository:
 
 ```bash
 python -m pip install ./dist/syphon_python-0.2.0.tar.gz
 ```
 
-### Tests and formatting
+If you change the native framework sources during development, rebuild the editable installation with:
+
+```bash
+uv sync --locked --reinstall-package syphon-python
+```
+
+The build uses the selected Xcode installation or finds it at `/Applications/Xcode.app` automatically.
+If the Metal toolchain is missing, install it in **Xcode > Settings > Components**. For Xcode installed
+in a custom location, specify its path when building:
+
+```bash
+DEVELOPER_DIR=/path/to/Xcode.app/Contents/Developer uv build
+```
+
+### Tests
+
+Run the tests locally with pytest:
 
 ```bash
 uv run pytest
 
-# validate packaged resources, metadata, and both native architectures
-uv build
-uv run pytest --dist-dir dist
-
-# check Python code without changing it
-uv run ruff check .
-uv run ruff format --check .
-
-# apply formatting locally
-uv run ruff format .
+# also test the optional NumPy and OpenGL support
+uv run --extra numpy --extra opengl pytest
 ```
 
-Run optional NumPy and OpenGL tests with `uv run --extra numpy --extra opengl pytest`.
-Metal and OpenGL integration tests run when their devices/contexts are available.
-Use `-m 'not metal and not opengl'` to exclude native rendering tests.
-Free-threaded test runs fail if a dependency enables the GIL. Distribution checks skip unless
-`--dist-dir` is supplied, and optional-dependency tests skip when their extra is not installed.
+After running `uv build`, use `uv run pytest --dist-dir dist` to check the generated packages as well.
+Rendering tests require a Metal device or an OpenGL context; use `-m 'not metal and not opengl'` to skip them.
 
-To test a different interpreter, specify it explicitly, for example:
+To test with a different Python version, for example a free-threaded build:
 
 ```bash
 uv run --python 3.14t --extra numpy --extra opengl pytest
 ```
 
+### Formatting
+
+The project uses Ruff to check and format Python code:
+
+```bash
+# check the code and formatting
+uv run ruff check .
+uv run ruff format --check .
+
+# apply formatting
+uv run ruff format .
+```
+
 ### Generate Documentation
 
 ```bash
-# generate HTML into docs/
+# generate documentation into docs/
 uv run --group docs --extra numpy python scripts/generate_doc.py
 
 # launch the local documentation server
 uv run --group docs --extra numpy python scripts/generate_doc.py --serve
 ```
 
-CI checks builds, tests, formatting, and documentation on pushes and pull requests.
-For publishing instructions, see the [maintainer guide](https://github.com/cansik/syphon-python/blob/main/.github/RELEASING.md).
+For release and CI instructions, see the [maintainer guide](https://github.com/cansik/syphon-python/blob/main/.github/RELEASING.md).
 
 ## Citation
 
-If you use syphon-python in research, please cite it using the metadata in
+If you use syphon-python in your research, please cite it using
 [CITATION.cff](https://github.com/cansik/syphon-python/blob/main/CITATION.cff).
 
 ## About
