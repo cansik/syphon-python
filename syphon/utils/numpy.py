@@ -2,7 +2,7 @@ from typing import Any
 
 import numpy as np
 
-from syphon.utils.raw import copy_mtl_texture_to_bytes, copy_bytes_to_mtl_texture
+from syphon.utils.raw import copy_bytes_to_mtl_texture, copy_mtl_texture_to_bytes
 
 
 def copy_image_to_mtl_texture(image: np.ndarray, texture: Any):
@@ -32,7 +32,7 @@ def copy_mtl_texture_to_image(texture: Any) -> np.ndarray:
 
     Returns:
     - np.ndarray: The resulting image as a NumPy array of shape (height, width, 4).
-    
+
     Note:
     - todo: Add support for buffer re-use.
     """

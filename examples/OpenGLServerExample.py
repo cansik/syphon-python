@@ -1,8 +1,28 @@
-from itertools import islice, cycle
+from itertools import cycle, islice
 
 import glfw
-from OpenGL.GL import *
-from OpenGL.GLUT import *
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_NEAREST,
+    GL_QUADS,
+    GL_RGBA,
+    GL_TEXTURE_2D,
+    GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_MIN_FILTER,
+    GL_UNSIGNED_BYTE,
+    GLuint,
+    glBegin,
+    glBindTexture,
+    glClear,
+    glClearColor,
+    glEnable,
+    glEnd,
+    glGenTextures,
+    glTexCoord2f,
+    glTexImage2D,
+    glTexParameteri,
+    glVertex2f,
+)
 
 import syphon
 

@@ -1,7 +1,20 @@
 from typing import Any
 
 import glfw
-from OpenGL.GL import *
+from OpenGL.GL import (
+    GL_COLOR_BUFFER_BIT,
+    GL_QUADS,
+    GL_TEXTURE_RECTANGLE,
+    glBegin,
+    glBindTexture,
+    glClear,
+    glClearColor,
+    glDisable,
+    glEnable,
+    glEnd,
+    glTexCoord2f,
+    glVertex2f,
+)
 
 import syphon
 

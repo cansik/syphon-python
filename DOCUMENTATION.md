@@ -35,7 +35,7 @@ server = syphon.SyphonOpenGLServer("Demo")
 To publish a texture, the method `syphon.server.BaseSyphonServer.publish_frame_texture()` can be used. We assume that the corresponding texture has already been created and is available in the `texture` variable. To see how to create and fill a MTLTexture or glTexture, please have a look at the [examples](https://github.com/cansik/syphon-python/tree/main/examples).
 
 ```python
-texture = ... # MTLTexture or glTexture
+texture = ...  # MTLTexture or glTexture
 server.publish_frame_texture(texture)
 ```
 
@@ -66,6 +66,8 @@ server = syphon.SyphonMetalServer("Demo", device=mtl_device, command_queue=mtl_c
 ```
 
 ### OpenGL Server
+Install `syphon-python[opengl]` to enable OpenGL support. Metal usage does not require this extra.
+
 On initialisation, the `syphon.server.SyphonOpenGLServer` tries to find the current [cglContextObj](https://developer.apple.com/documentation/appkit/nsopenglcontext/1436158-cglcontextobj) using the current [NSOpenGLContext](https://developer.apple.com/documentation/appkit/nsopenglcontext). It is possible to override the automatic lookup by passing a valid `cglContextObj` as a parameter to the `syphon.server.SyphonOpenGLServer`.
 
 ```python
@@ -128,7 +130,7 @@ To get textures, it is possible to first check if the server has provided a new 
 
 ```python
 if client.has_new_frame:
-    texture = client.new_frame_image # either MTLTexture or glTexture
+    texture = client.new_frame_image  # either MTLTexture or glTexture
 ```
 
 To stop the client and disconnect from the server, the `syphon.client.BaseSyphonClient.stop()` method can be used.
@@ -149,6 +151,8 @@ client = syphon.SyphonMetalClient(server_info, device=mtl_device)
 ```
 
 ### OpenGL Client
+Install `syphon-python[opengl]` to enable OpenGL support.
+
 As with the [opengl server](#opengl-server), it is possible to override the automatic lookup by passing a valid `cglContextObj` as a parameter to the `syphon.client.SyphonOpenGLClient`.
 
 ```python
@@ -184,7 +188,7 @@ To write `bytes` to an [MTLTexture](https://developer.apple.com/documentation/me
 from syphon.utils.raw import copy_bytes_to_mtl_texture
 
 data = ...  # bytes() based buffer
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
 copy_bytes_to_mtl_texture(data, texture)
 ```
@@ -194,15 +198,15 @@ To read `bytes` from an [MTLTexture](https://developer.apple.com/documentation/m
 ```python
 from syphon.utils.raw import copy_mtl_texture_to_bytes
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
-data = copy_mtl_texture_to_bytes(texture) # returns bytes
+data = copy_mtl_texture_to_bytes(texture)  # returns bytes
 ```
 
 ### Numpy
 If you are working with [Numpy](https://numpy.org/) arrays, the `syphon.utils.numpy` package contains helper methods for reading and writing numpy images to and from [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture).
 
-It is important to note that the `numpy` package is not installed by default, it must be installed using `pip install numpy`.
+It is important to note that the `numpy` package is not installed by default, it must be installed using `pip install 'syphon-python[numpy]'`.
 
 To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mtl_texture()` method can be used.
 
@@ -210,7 +214,7 @@ To write a numpy image to a MTLTexture, the `syphon.utils.numpy.copy_image_to_mt
 import numpy as np
 from syphon.utils.numpy import copy_image_to_mtl_texture
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
 # create RGBA image
 texture_data = np.zeros((512, 512, 4), dtype=np.uint8)
@@ -225,9 +229,9 @@ To read a numpy image from a MTLTexture, the `syphon.utils.numpy.copy_mtl_textur
 import numpy as np
 from syphon.utils.numpy import copy_mtl_texture_to_image
 
-texture = ... # MLTTexture object
+texture = ...  # MLTTexture object
 
-texture_data = copy_mtl_texture_to_image(texture) # returns numpy array
+texture_data = copy_mtl_texture_to_image(texture)  # returns numpy array
 ```
 
 ## Python Binding
@@ -275,3 +279,130 @@ class SimpleServerScreen(Screen):
         texture_pointer = get_mtl_texture(texture)
         self.syphon_server.publish_frame_texture(texture_pointer, is_flipped=True)
 ```
+
+
+## Frame Notifications
+
+When receiving frames, an application can check `has_new_frame` in its rendering loop. If the application does not already have such a loop, a callback can be used to notify it when a frame arrives. Both Metal and OpenGL clients accept a `new_frame_handler` which receives the client as its argument.
+
+The following example uses a Python event to signal the application that a new frame is available.
+
+```python
+import threading
+
+available = threading.Event()
+
+with syphon.SyphonMetalClient(description, new_frame_handler=lambda client: available.set()) as client:
+    # wait for a notification, then retrieve the latest texture
+    if available.wait(timeout=5):
+        available.clear()
+        texture = client.new_frame_image
+```
+
+Syphon calls the handler on a background thread. Keep the handler short and perform UI or OpenGL work on the application thread. A client must also be stopped outside this callback to avoid blocking Syphon's own notification thread.
+
+For applications using asyncio, `callback_loop=asyncio.get_running_loop()` can be passed to deliver the handler on that event loop instead. The handler is still a regular Python function; it can use `asyncio.create_task()` to start asynchronous work.
+
+### Waiting with Asyncio
+
+If an application already uses asyncio, `wait_for_frame()` allows it to wait for an image while other tasks continue running. The method waits for availability; the image is then retrieved separately through `new_frame_image`.
+
+```python
+async def receive_frame(description):
+    with syphon.SyphonMetalClient(description) as client:
+        # wait up to five seconds for a frame
+        await client.wait_for_frame(timeout=5)
+        texture = client.new_frame_image
+        return texture
+```
+
+A timeout raises `asyncio.TimeoutError`, and a disconnected server raises `ConnectionError`. Syphon provides the latest frame, so a slow receiver may skip intermediate frames. Waiting does not create a queue of images.
+
+For complete examples, see [MetalCallbackExample](https://github.com/cansik/syphon-python/blob/main/examples/MetalCallbackExample.py) and [MetalAsyncExample](https://github.com/cansik/syphon-python/blob/main/examples/MetalAsyncExample.py). The asyncio example also shows how to process Cocoa events for server discovery without a UI.
+
+## Private Servers
+
+By default, Syphon servers appear in the shared directory so that other applications can find them. If an output is only intended for a specific client, `is_private=True` can be used to hide it from discovery. The client then connects using the server's description directly.
+
+```python
+with syphon.SyphonMetalServer("Internal", is_private=True) as server:
+    # connect directly without searching the shared directory
+    with syphon.SyphonMetalClient(server.server_description, server.device) as client:
+        ...
+```
+
+This works for both Metal and OpenGL servers. A private server is hidden, but is not protected by authentication. When passing its description to another process, preserve the complete `server_description.raw` dictionary. It can be converted back using `SyphonServerDescription.from_native(raw)`.
+
+### Changing the Server Name
+
+An application may want to rename an output when its content changes, for example when switching from a camera feed to a preview. Assigning `server.name` updates the running server and its name in discovery.
+
+```python
+server.name = "Camera Preview"
+```
+
+### Accessing the Server Output
+
+To preview a server's output in the same application, `server.new_frame_image` can be used without creating an additional client. It returns a Metal texture or an OpenGL image, depending on the server.
+
+```python
+# retrieve the current output after publishing a frame
+image = server.new_frame_image
+if image is not None:
+    ...  # display or inspect the image
+```
+
+The result may be `None` before the first frame is published. Keep the image alive while using it and release Python references when finished; PyObjC handles native memory management. The image represents the current output rather than a saved copy of an earlier frame.
+
+See [PrivateMetalExample](https://github.com/cansik/syphon-python/blob/main/examples/PrivateMetalExample.py) for a complete example of private connections, renaming, and output access.
+
+## Direct OpenGL Rendering
+
+If an application already renders with OpenGL, it can draw directly into Syphon's framebuffer instead of creating a separate texture to publish. `bind_to_draw_frame()` selects that framebuffer, and `unbind_and_publish()` publishes the result after drawing.
+
+The following example assumes an OpenGL context is already current.
+
+```python
+with syphon.SyphonOpenGLServer("Direct output", depth_buffer_resolution=24) as server:
+    if server.bind_to_draw_frame((640, 480)):
+        try:
+            ...  # draw the scene using OpenGL
+        finally:
+            # publish the frame and restore the framebuffer binding
+            server.unbind_and_publish()
+```
+
+For scenes that need smoother edges or depth and stencil buffers, the server accepts `antialias_sample_count`, `depth_buffer_resolution`, and `stencil_buffer_resolution`. These options are disabled by default; the driver chooses a supported configuration. Supported parameter values are listed in `syphon.server.SyphonOpenGLServer`.
+
+Only unbind after a successful bind, and do both on the same thread. The OpenGL context must remain alive and available exclusively to that thread during drawing. Unbind before stopping the server.
+
+See [OpenGLDirectRenderingExample](https://github.com/cansik/syphon-python/blob/main/examples/OpenGLDirectRenderingExample.py) for a complete example which creates its own context.
+
+## Resource Cleanup
+
+Clients and servers hold native resources while they are running. A `with` statement is a convenient way to release them when leaving a block, including when an exception occurs.
+
+```python
+with syphon.SyphonMetalServer("Demo") as server:
+    ...  # create and publish textures
+
+# the server has now been stopped
+```
+
+The same pattern works for clients. Calling `stop()` explicitly is also supported, and calling it more than once is harmless.
+
+### Removing Directory Observers
+
+An application may only need discovery notifications while a server-selection view is open. `add_observer()` returns a token which can be used to remove that subscription when it is no longer needed.
+
+```python
+with syphon.SyphonServerDirectory() as directory:
+    # listen for newly available servers
+    token = directory.add_observer(syphon.SyphonServerNotification.Announce, print)
+    directory.update_run_loop()
+
+    # stop receiving this notification
+    directory.remove_observer(token)
+```
+
+Leaving the `with` block removes any remaining observers registered through that directory wrapper. Alternatively, call `directory.close()` explicitly. This does not stop Syphon's shared directory or remove another wrapper's observers.

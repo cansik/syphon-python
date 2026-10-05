@@ -25,6 +25,18 @@ def _load_lib_bundle(bundle_name: str, scan_classes: bool = False):
 # initialize syphon bundle
 _load_lib_bundle("Syphon")
 
-from syphon.server import BaseSyphonServer, SyphonMetalServer, SyphonOpenGLServer
-from syphon.server_directory import SyphonServerDirectory, SyphonServerNotification, SyphonServerDescription
-from syphon.client import BaseSyphonClient, SyphonMetalClient, SyphonOpenGLClient
+from syphon.client import (
+    BaseSyphonClient as BaseSyphonClient,
+    SyphonMetalClient as SyphonMetalClient,
+    SyphonOpenGLClient as SyphonOpenGLClient,
+)
+from syphon.server import (
+    BaseSyphonServer as BaseSyphonServer,
+    SyphonMetalServer as SyphonMetalServer,
+    SyphonOpenGLServer as SyphonOpenGLServer,
+)
+from syphon.server_directory import (
+    SyphonServerDescription as SyphonServerDescription,
+    SyphonServerDirectory as SyphonServerDirectory,
+    SyphonServerNotification as SyphonServerNotification,
+)

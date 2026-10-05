@@ -6,10 +6,3 @@
         {% if logo_link %}</a>{% endif %}
     </footer>
 {% endblock %}
-
-
-{% defaultmacro docstring(var) %}
-    {% if var.docstring %}
-        <div class="docstring">{{ var.docstring | to_markdown | to_html | linkify(namespace=var.qualname) }}</div>
-    {% endif %}
-{% enddefaultmacro %}

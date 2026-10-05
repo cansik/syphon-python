@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+type: software
+title: "syphon-python"
+version: "0.2.0"
+authors:
+  - family-names: "Bruggisser"
+    given-names: "Florian"
+    orcid: "https://orcid.org/0009-0003-0645-6746"
+abstract: "Python wrapper for the Syphon GPU texture sharing framework, supporting Metal and OpenGL on macOS."
+license: "MIT"
+url: "https://github.com/cansik/syphon-python"
+repository-code: "https://github.com/cansik/syphon-python"
+keywords:
+  - python
+  - syphon
+  - metal
+  - opengl
+  - texture sharing

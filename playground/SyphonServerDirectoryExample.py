@@ -1,7 +1,8 @@
-import syphon
 import objc
-from Foundation import NSAutoreleasePool, NSRunLoop, NSDate
+from Foundation import NSAutoreleasePool
 from PyObjCTools import AppHelper
+
+import syphon  # noqa: F401 - Load the native bundle before Objective-C class lookup.
 
 
 def server_announce_notification(notification):
@@ -26,12 +27,9 @@ def main():
     pool = NSAutoreleasePool.alloc().init()
 
     # Add an observer for the SyphonServerAnnounceNotification
-    notification_center = objc.lookUpClass('NSNotificationCenter').defaultCenter()
+    notification_center = objc.lookUpClass("NSNotificationCenter").defaultCenter()
     notification_center.addObserverForName_object_queue_usingBlock_(
-        "SyphonServerAnnounceNotification",
-        None,
-        None,
-        server_announce_notification
+        "SyphonServerAnnounceNotification", None, None, server_announce_notification
     )
 
     quit = False

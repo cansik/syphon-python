@@ -1,12 +1,14 @@
+import threading
 from abc import ABC, abstractmethod
-from typing import Tuple, Optional, Any
+from typing import Any, Optional, Tuple
 
 import Cocoa
 import Metal
 import objc
-from OpenGL.GL import *
 
-from syphon.types import Texture, Region, Size
+from syphon._native import cgl_context, server_options
+from syphon.server_directory import SyphonServerDescription
+from syphon.types import Region, Size, Texture
 from syphon.utils import opengl
 
 
@@ -25,14 +27,54 @@ class BaseSyphonServer(ABC):
         Parameters:
         - name (str): The name of the Syphon server.
         """
-        self.name = name
+        self._name = name
+        self._lifecycle_lock = threading.RLock()
+        self._stopped = False
+        self._bound_thread = None
+        self.context = None
+
+    def _finish_initialization(self, context):
+        if context is None:
+            self._stopped = True
+            raise RuntimeError("Syphon could not create the server")
+        self.context = context
+
+    @property
+    def name(self) -> str:
+        """The live native name; assignment updates discovery in other applications."""
+        return self._name if self.context is None else self.context.name()
+
+    @name.setter
+    def name(self, value: str):
+        with self._lifecycle_lock:
+            if self._stopped:
+                raise RuntimeError("Syphon server is stopped")
+            self.context.setName_(value)
+
+    @property
+    def server_description(self) -> SyphonServerDescription:
+        """Complete native connection metadata, also usable for private servers."""
+        return SyphonServerDescription.from_native(self.context.serverDescription())
+
+    @property
+    def new_frame_image(self) -> Any:
+        """Current server output, or None; keep it alive while in use. PyObjC owns releases."""
+        with self._lifecycle_lock:
+            return None if self._stopped else self.context.newFrameImage()
+
+    def __enter__(self):
+        with self._lifecycle_lock:
+            if self._stopped:
+                raise RuntimeError("Syphon server is stopped")
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
 
     @abstractmethod
-    def publish_frame_texture(self,
-                              texture: Texture,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False):
+    def publish_frame_texture(
+        self, texture: Texture, region: Optional[Region] = None, size: Optional[Size] = None, is_flipped: bool = False
+    ):
         """
         Publish a frame with the given texture.
 
@@ -51,12 +93,17 @@ class BaseSyphonServer(ABC):
         """
         pass
 
-    @abstractmethod
     def stop(self):
-        """
-        Stop the Syphon server.
-        """
-        pass
+        """Stop once. An OpenGL framebuffer must be unbound first."""
+        with self._lifecycle_lock:
+            if self._stopped:
+                return
+            if self._bound_thread is not None:
+                raise RuntimeError("Unbind and publish the OpenGL framebuffer before stopping")
+            self._stopped = True
+            context = self.context
+        if context is not None:
+            context.stop()
 
     @property
     @abstractmethod
@@ -82,10 +129,9 @@ class BaseSyphonServer(ABC):
         """
         pass
 
-    def _prepare_region_and_size(self,
-                                 texture: Texture,
-                                 region: Optional[Region] = None,
-                                 size: Optional[Size] = None) -> Tuple[Region, Size]:
+    def _prepare_region_and_size(
+        self, texture: Texture, region: Optional[Region] = None, size: Optional[Size] = None
+    ) -> Tuple[Region, Size]:
         """
         Prepare the region and size for publishing.
 
@@ -114,10 +160,9 @@ class SyphonMetalServer(BaseSyphonServer):
     - context (Any): The Syphon-Metal context.
     """
 
-    def __init__(self,
-                 name: str,
-                 device: Optional[Any] = None,
-                 command_queue: Optional[Any] = None):
+    def __init__(
+        self, name: str, device: Optional[Any] = None, command_queue: Optional[Any] = None, *, is_private: bool = False
+    ):
         """
         Initialize a SyphonMetalServer.
 
@@ -125,6 +170,7 @@ class SyphonMetalServer(BaseSyphonServer):
         - name (str): The name of the Syphon server.
         - device (Any, optional): The Metal device. If None, the default system device will be used.
         - command_queue (Any, optional): The Metal command queue. If None, a new command queue will be created.
+        - is_private (bool): Hide the server from discovery; connect using server_description instead.
         """
         super().__init__(name)
 
@@ -135,21 +181,31 @@ class SyphonMetalServer(BaseSyphonServer):
         if self.device is None:
             self.device = Metal.MTLCreateSystemDefaultDevice()
 
+        if self.device is None:
+            raise RuntimeError("No Metal device is available")
+
         # setup command queue
         if self.command_queue is None:
             self.command_queue = self.device.newCommandQueue()
 
+        if self.command_queue is None:
+            raise RuntimeError("Could not create a Metal command queue")
+
         # setup syphon-metal context
         SyphonMetalServerObjC = objc.lookUpClass("SyphonMetalServer")
-        self.context = SyphonMetalServerObjC.alloc().initWithName_device_options_(name, self.device, None)
+        self._finish_initialization(
+            SyphonMetalServerObjC.alloc().initWithName_device_options_(name, self.device, server_options(is_private))
+        )
 
-    def publish_frame_texture(self,
-                              texture: Texture,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False,
-                              command_buffer: Optional[Any] = None,
-                              auto_commit: bool = True):
+    def publish_frame_texture(
+        self,
+        texture: Texture,
+        region: Optional[Region] = None,
+        size: Optional[Size] = None,
+        is_flipped: bool = False,
+        command_buffer: Optional[Any] = None,
+        auto_commit: bool = True,
+    ):
         """
         Publish a frame with the given Metal texture.
 
@@ -170,10 +226,9 @@ class SyphonMetalServer(BaseSyphonServer):
             command_buffer = self.command_queue.commandBuffer()
 
         # publish actual texture
-        self.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_(texture,
-                                                                              command_buffer,
-                                                                              ns_region,
-                                                                              is_flipped)
+        self.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_(
+            texture, command_buffer, ns_region, is_flipped
+        )
         # commit command buffer
         if auto_commit:
             command_buffer.commitAndWaitUntilSubmitted()
@@ -183,12 +238,6 @@ class SyphonMetalServer(BaseSyphonServer):
         Publish the frame.
         """
         self.context.publish()
-
-    def stop(self):
-        """
-        Stop the SyphonMetalServer.
-        """
-        self.context.stop()
 
     @property
     def has_clients(self) -> bool:
@@ -223,59 +272,120 @@ class SyphonOpenGLServer(BaseSyphonServer):
     - context (Any): The Syphon-OpenGL context.
     """
 
-    def __init__(self, name: str, cgl_context_obj: Optional[Any] = None):
+    def __init__(
+        self,
+        name: str,
+        cgl_context_obj: Optional[Any] = None,
+        *,
+        is_private: bool = False,
+        antialias_sample_count: int = 0,
+        depth_buffer_resolution: int = 0,
+        stencil_buffer_resolution: int = 0,
+    ):
         """
         Initialize a SyphonOpenGLServer.
 
         Parameters:
         - name (str): The name of the Syphon server.
         - cgl_context_obj (Any, optional): The CGL context object. If None, the current context will be used.
+        - is_private (bool): Hide the server from discovery; this is not access control.
+        - antialias_sample_count (int): Requested multisample count, or zero to disable it.
+        - depth_buffer_resolution (int): Requested depth bits: 0, 16, 24, or 32.
+        - stencil_buffer_resolution (int): Requested stencil bits: 0, 1, 4, 8, or 16.
+
+        Framebuffer options apply to bind_to_draw_frame/unbind_and_publish. The native
+        driver may choose the nearest supported buffer configuration.
         """
         super().__init__(name)
+
+        opengl._require_pyopengl()
+
+        for label, value, allowed in (
+            ("antialias_sample_count", antialias_sample_count, None),
+            ("depth_buffer_resolution", depth_buffer_resolution, (0, 16, 24, 32)),
+            ("stencil_buffer_resolution", stencil_buffer_resolution, (0, 1, 4, 8, 16)),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0 or (allowed and value not in allowed):
+                raise ValueError(f"Invalid {label}: {value}")
 
         # store CGL context object
         self.cgl_context_obj = opengl.get_current_cgl_context_obj() if cgl_context_obj is None else cgl_context_obj
 
         # create syphon gl server
         SyphonOpenGLServerObjC = objc.lookUpClass("SyphonOpenGLServer")
-        self.context = SyphonOpenGLServerObjC.alloc().initWithName_context_options_(name, self.cgl_context_obj, None)
+        self._finish_initialization(
+            SyphonOpenGLServerObjC.alloc().initWithName_context_options_(
+                name,
+                cgl_context(self.cgl_context_obj),
+                server_options(
+                    is_private,
+                    SyphonServerOptionAntialiasSampleCount=antialias_sample_count,
+                    SyphonServerOptionDepthBufferResolution=depth_buffer_resolution,
+                    SyphonServerOptionStencilBufferResolution=stencil_buffer_resolution,
+                ),
+            )
+        )
 
-    def publish_frame_texture(self,
-                              texture: GLint,
-                              region: Optional[Region] = None,
-                              size: Optional[Size] = None,
-                              is_flipped: bool = False,
-                              target: GLenum = GL_TEXTURE_2D):
+    def bind_to_draw_frame(self, size: Size) -> bool:
+        """Bind Syphon's framebuffer. Pair a successful bind with unbind_and_publish().
+
+        Drawing, unbinding, and native context access require exclusive use of the CGL
+        context by the calling thread. A failed bind must not be followed by unbinding.
+        """
+        if len(size) != 2 or any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in size):
+            raise ValueError("Frame size must contain two positive integers")
+        with self._lifecycle_lock:
+            if self._stopped:
+                raise RuntimeError("Syphon server is stopped")
+            if self._bound_thread is not None:
+                raise RuntimeError("Syphon framebuffer is already bound")
+            success = bool(self.context.bindToDrawFrameOfSize_(Cocoa.NSSize(*size)))
+            if success:
+                self._bound_thread = threading.current_thread()
+            return success
+
+    def unbind_and_publish(self):
+        """Publish and unbind on the same thread that successfully bound the framebuffer."""
+        with self._lifecycle_lock:
+            if self._bound_thread is None:
+                raise RuntimeError("No Syphon framebuffer is bound")
+            if self._bound_thread is not threading.current_thread():
+                raise RuntimeError("Unbind on the thread that bound the Syphon framebuffer")
+            self.context.unbindAndPublish()
+            self._bound_thread = None
+
+    def publish_frame_texture(
+        self,
+        texture: int,
+        region: Optional[Region] = None,
+        size: Optional[Size] = None,
+        is_flipped: bool = False,
+        target: int = opengl.GL_TEXTURE_2D,
+    ):
         """
         Publish a frame with the given OpenGL texture.
 
         Parameters:
-        - texture (GLint): The OpenGL texture to publish.
+        - texture (int): The OpenGL texture identifier to publish.
         - region (Region, optional): The region of the texture to publish. Defaults to None.
         - size (Size, optional): The size of the texture. Defaults to None.
         - is_flipped (bool, optional): If True, the frame is flipped. Defaults to False.
-        - target (GLenum, optional): The OpenGL texture target. Defaults to GL_TEXTURE_2D.
+        - target (int, optional): The OpenGL texture target. Defaults to GL_TEXTURE_2D.
         """
         # create ns-region
         region, size = self._prepare_region_and_size(texture, region, size)
         ns_region = Cocoa.NSRect((region[0], region[1]), (region[2], region[3]))
         ns_size = Cocoa.NSSize(size[0], size[1])
 
-        self.context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_(texture, target,
-                                                                                              ns_region,
-                                                                                              ns_size, is_flipped)
+        self.context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_(
+            texture, target, ns_region, ns_size, is_flipped
+        )
 
     def publish(self):
         """
         Publish the frame.
         """
         self.context.publish()
-
-    def stop(self):
-        """
-        Stop the SyphonOpenGLServer.
-        """
-        self.context.stop()
 
     @property
     def has_clients(self) -> bool:
@@ -297,14 +407,15 @@ class SyphonOpenGLServer(BaseSyphonServer):
         Returns:
         - Size: The size of the texture.
         """
-        glBindTexture(GL_TEXTURE_2D, texture)
+        gl = opengl._require_pyopengl()
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
 
-        width = GLint()
-        height = GLint()
+        width = gl.GLint()
+        height = gl.GLint()
 
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, width)
-        glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, height)
+        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_WIDTH, width)
+        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_HEIGHT, height)
 
-        glBindTexture(GL_TEXTURE_2D, 0)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
         return int(width.value), int(height.value)
