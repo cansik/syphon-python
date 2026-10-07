@@ -61,34 +61,39 @@ def render(texture: Any, width: int, height: int):
 
 def main():
     window = init_glfw(640, 480)
+    if window is None:
+        return 1
 
-    directory = syphon.SyphonServerDirectory()
-    # servers = directory.servers_matching_name(app_name="Simple Server")
-    servers = directory.servers
+    try:
+        with syphon.SyphonServerDirectory() as directory:
+            server = directory.wait_for_server(timeout=5)
+            if server is None:
+                print("No server found!")
+                return 1
 
-    if not servers:
-        print("No server found!")
-        exit(1)
+            with syphon.SyphonOpenGLClient(server) as client:
+                while not glfw.window_should_close(window) and client.is_valid:
+                    if client.has_new_frame:
+                        image = client.new_frame_image
+                        if image is not None:
+                            try:
+                                size = image.textureSize()
+                                render(image.textureName(), int(size.width), int(size.height))
+                            finally:
+                                # Release while the OpenGL context is still current.
+                                del image
 
-    server = servers[0]
+                    glfw.poll_events()
+                    glfw.swap_buffers(window)
 
-    client = syphon.SyphonOpenGLClient(server)
-
-    while not glfw.window_should_close(window):
-        if client.has_new_frame:
-            legacy_surface_image = client.new_frame_image
-            size = legacy_surface_image.textureSize()
-            width, height = int(size.width), int(size.height)
-            texture = legacy_surface_image.textureName()
-
-            render(texture, width, height)
-
-        glfw.poll_events()
-        glfw.swap_buffers(window)
-
-    client.stop()
-    glfw.terminate()
+        return 0
+    finally:
+        glfw.destroy_window(window)
+        glfw.terminate()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        pass

@@ -13,19 +13,23 @@ def main():
     with syphon.SyphonMetalServer("Demo") as server, syphon.SyphonServerDirectory() as directory:
         directory.run_loop_interval = 0.001
 
-        # Create a Metal texture and an opaque red NumPy image.
+        # Create a Metal texture.
         texture = create_mtl_texture(server.device, 512, 512)
+
+        # Create an opaque red NumPy image.
         data = np.zeros((512, 512, 4), dtype=np.uint8)
         data[:, :, 0] = 255  # red
         data[:, :, 3] = 255  # alpha
+
         print("publishing... (Ctrl+C to stop)")
         while True:
-            # Copy the image onto the texture and publish it.
+            # Copy the current image onto the texture and publish it.
             copy_image_to_mtl_texture(data, texture)
             server.publish_frame_texture(texture)
 
             # Process discovery requests even though there is no window.
             directory.update_run_loop()
+
             time.sleep(1 / 60)
 
 
