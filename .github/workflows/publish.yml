@@ -76,3 +76,12 @@ jobs:
           test -z "$existing_tag" || { echo "Release tag already exists: $existing_tag"; exit 1; }
           gh release create "v$RELEASE_VERSION" dist/*.whl dist/*.tar.gz \
             --target "$RELEASE_COMMIT" --title "Version $RELEASE_VERSION" --generate-notes
+
+  docs:
+    needs: [pypi, release]
+    if: ${{ !cancelled() && (needs.pypi.result == 'success' || needs.release.result == 'success') }}
+    uses: ./.github/workflows/docs.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

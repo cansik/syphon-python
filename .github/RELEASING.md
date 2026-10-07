@@ -20,6 +20,6 @@ PyPI API token. See the [PyPI trusted publishing guide](https://docs.pypi.org/tr
 
 For documentation hosting, select **GitHub Actions** as the repository's Pages source. The
 **Publish documentation** workflow runs manually or on pushed `v*` tags. Tags created by the
-release workflow's `GITHUB_TOKEN` do not trigger another workflow, so run documentation publication
-manually after those releases.
-
+release workflow's `GITHUB_TOKEN` do not trigger another workflow, so **Publish release** calls the
+documentation workflow directly after a successful PyPI publication or GitHub release. Documentation
+is built from the same commit as the release; validation-only runs do not deploy it.
