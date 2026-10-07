@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "syphon-python"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python wrapper for the GPU texture sharing framework Syphon."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -71,6 +71,7 @@ include = [
 ]
 exclude = [
     "/vendor/Syphon/.git", "/vendor/Syphon/build", "/syphon/libs/*.framework",
+    "/scripts/benchmark.py", "/tests/test_benchmark.py", "/benchmark-results",
 ]
 
 [tool.pytest.ini_options]

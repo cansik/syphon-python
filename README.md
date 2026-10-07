@@ -69,12 +69,13 @@ with syphon.SyphonMetalServer("Demo") as server, syphon.SyphonServerDirectory() 
 
     try:
         while True:
-            # copy the image onto the texture and publish it
+            # copy the current image onto the texture and publish it
             copy_image_to_mtl_texture(texture_data, texture)
             server.publish_frame_texture(texture)
 
             # process discovery requests without opening a window
             directory.update_run_loop()
+
             time.sleep(1 / 60)
     except KeyboardInterrupt:
         pass
@@ -127,7 +128,7 @@ The wheel includes the Syphon framework for both Apple Silicon and Intel. The so
 the framework sources, so it can also be built without cloning the repository:
 
 ```bash
-python -m pip install ./dist/syphon_python-0.2.0.tar.gz
+python -m pip install ./dist/syphon_python-0.3.0.tar.gz
 ```
 
 If you change the native framework sources during development, rebuild the editable installation with:
@@ -176,6 +177,18 @@ uv run ruff format --check .
 # apply formatting
 uv run ruff format .
 ```
+
+### Benchmarks
+
+From a development checkout, save a run before changing the library and compare it with a later run:
+
+```bash
+uv run --extra numpy python -m scripts.benchmark --output benchmark-results/before.json
+uv run --extra numpy python -m scripts.benchmark --compare benchmark-results/before.json --output benchmark-results/after.json
+```
+
+Results stay local. The benchmark tool is available in the repository, but is not included in release packages.
+Use `--help` for backend and image-size options.
 
 ### Generate Documentation
 
