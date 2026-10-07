@@ -30,6 +30,8 @@ jobs:
   validate:
     needs: guard
     uses: ./.github/workflows/build.yml
+    with:
+      full: true
 
   pypi:
     if: inputs.publish_pypi
