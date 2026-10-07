@@ -1,6 +1,7 @@
 # CI and releases
 
-The build workflow checks pushes and pull requests. It builds a universal wheel from the source
+The build workflow checks pull requests and pushes to `main`, avoiding duplicate runs for feature
+branch updates. It builds a universal wheel from the source
 archive, checks Ruff and documentation, and uses four routine test jobs covering the oldest and
 newest supported Python versions, free-threaded Python, Apple Silicon, and Intel. Release validation
 and manual full runs use ten test jobs for broader Python coverage. Both tiers test the installed
