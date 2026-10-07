@@ -95,7 +95,7 @@ def test_opengl_publish_preserves_default_and_explicit_targets():
     call = context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_.call_args
     assert call.args[0:2] == (7, 0x0DE1)
     assert call.args[-1] is False
-    publish(server, 9, target=0x84F5, is_flipped=True)  # GL_TEXTURE_RECTANGLE
+    publish(server, 9, size=(8, 4), target=0x84F5, is_flipped=True)  # GL_TEXTURE_RECTANGLE
     call = context.publishFrameTexture_textureTarget_imageRegion_textureDimensions_flipped_.call_args
     assert call.args[0:2] == (9, 0x84F5)
     assert call.args[-1] is True

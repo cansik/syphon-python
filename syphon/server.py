@@ -205,7 +205,7 @@ class SyphonMetalServer(BaseSyphonServer):
         is_flipped: bool = False,
         command_buffer: Optional[Any] = None,
         auto_commit: bool = True,
-    ):
+    ) -> None:
         """
         Publish a frame with the given Metal texture.
 
@@ -215,7 +215,12 @@ class SyphonMetalServer(BaseSyphonServer):
         - size (Size, optional): The size of the texture. Defaults to None.
         - is_flipped (bool, optional): If True, the frame is flipped. Defaults to False.
         - command_buffer (Any, optional): The Metal command buffer. If None, a new command buffer will be created.
-        - auto_commit (bool, optional): If True, the command buffer is committed automatically. Defaults to True.
+        - auto_commit (bool, optional): If True, commit the buffer and wait for GPU completion. Defaults to True.
+
+        By default, publishing waits for GPU completion so the CPU can safely reuse
+        the texture after this method returns. With auto_commit=False, pass a
+        command_buffer and commit it yourself. Call waitUntilCompleted() before
+        overwriting its texture from the CPU.
         """
         # create ns-region
         region, _ = self._prepare_region_and_size(texture, region, size)
@@ -224,6 +229,8 @@ class SyphonMetalServer(BaseSyphonServer):
         # prepare command buffer if necessary
         if command_buffer is None:
             command_buffer = self.command_queue.commandBuffer()
+        if command_buffer is None:
+            raise RuntimeError("Could not create a Metal command buffer")
 
         # publish actual texture
         self.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_(
@@ -231,7 +238,8 @@ class SyphonMetalServer(BaseSyphonServer):
         )
         # commit command buffer
         if auto_commit:
-            command_buffer.commitAndWaitUntilSubmitted()
+            command_buffer.commit()
+            command_buffer.waitUntilCompleted()
 
     def publish(self):
         """
@@ -373,6 +381,8 @@ class SyphonOpenGLServer(BaseSyphonServer):
         - target (int, optional): The OpenGL texture target. Defaults to GL_TEXTURE_2D.
         """
         # create ns-region
+        if size is None and target != opengl.GL_TEXTURE_2D:
+            size = self._get_texture_size(texture, target=target)
         region, size = self._prepare_region_and_size(texture, region, size)
         ns_region = Cocoa.NSRect((region[0], region[1]), (region[2], region[3]))
         ns_size = Cocoa.NSSize(size[0], size[1])
@@ -397,7 +407,7 @@ class SyphonOpenGLServer(BaseSyphonServer):
         """
         return self.context.hasClients()
 
-    def _get_texture_size(self, texture: Texture) -> Size:
+    def _get_texture_size(self, texture: Texture, target: int = opengl.GL_TEXTURE_2D) -> Size:
         """
         Get the size of the OpenGL texture.
 
@@ -408,14 +418,17 @@ class SyphonOpenGLServer(BaseSyphonServer):
         - Size: The size of the texture.
         """
         gl = opengl._require_pyopengl()
-        gl.glBindTexture(gl.GL_TEXTURE_2D, texture)
-
-        width = gl.GLint()
-        height = gl.GLint()
-
-        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_WIDTH, width)
-        gl.glGetTexLevelParameteriv(gl.GL_TEXTURE_2D, 0, gl.GL_TEXTURE_HEIGHT, height)
-
-        gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-
-        return int(width.value), int(height.value)
+        bindings = {
+            gl.GL_TEXTURE_2D: gl.GL_TEXTURE_BINDING_2D,
+            gl.GL_TEXTURE_RECTANGLE: gl.GL_TEXTURE_BINDING_RECTANGLE,
+        }
+        if target not in bindings:
+            raise ValueError("Texture target must be GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE")
+        previous = int(gl.glGetIntegerv(bindings[target]))
+        try:
+            gl.glBindTexture(target, texture)
+            width = int(gl.glGetTexLevelParameteriv(target, 0, gl.GL_TEXTURE_WIDTH))
+            height = int(gl.glGetTexLevelParameteriv(target, 0, gl.GL_TEXTURE_HEIGHT))
+            return width, height
+        finally:
+            gl.glBindTexture(target, previous)

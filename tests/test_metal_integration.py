@@ -7,6 +7,53 @@ import pytest
 pytestmark = pytest.mark.metal
 
 
+@pytest.mark.parametrize("auto_commit", [False, True])
+@pytest.mark.parametrize("bgra", [False, True])
+def test_native_transfer_reuse_and_submission(server, auto_commit, bgra):
+    import Metal
+
+    np = pytest.importorskip("numpy")
+    from syphon.utils.numpy import copy_image_to_mtl_texture, copy_mtl_texture_to_image
+    from syphon.utils.raw import copy_mtl_texture_to_buffer, copy_mtl_texture_to_bytes, create_mtl_texture
+
+    pixel_format = Metal.MTLPixelFormatBGRA8Unorm if bgra else Metal.MTLPixelFormatRGBA8Unorm
+    texture = create_mtl_texture(server.device, 3, 2, pixel_format)
+    strided = np.arange(48, dtype=np.uint8).reshape(2, 6, 4)[:, ::2]
+    out = np.empty((2, 3, 4), dtype=np.uint8)
+    staging = bytearray(24)
+    snapshot = None
+    for image in (strided, np.ascontiguousarray(strided[:, ::-1])):
+        copy_image_to_mtl_texture(image, texture)
+        assert copy_mtl_texture_to_bytes(texture) == image.tobytes()
+        assert copy_mtl_texture_to_buffer(texture, staging) is staging
+        assert staging == image.tobytes()
+        assert copy_mtl_texture_to_image(texture, out=out) is out
+        np.testing.assert_array_equal(out, image)
+        if snapshot is None:
+            snapshot = copy_mtl_texture_to_image(texture)
+        buffer = server.command_queue.commandBuffer()
+        assert server.publish_frame_texture(texture, command_buffer=buffer, auto_commit=auto_commit) is None
+        if not auto_commit:
+            assert buffer.status() == Metal.MTLCommandBufferStatusNotEnqueued
+            buffer.commit()
+            buffer.waitUntilCompleted()
+        else:
+            assert buffer.status() == Metal.MTLCommandBufferStatusCompleted
+        assert buffer.error() is None
+        output = server.new_frame_image
+        if output.storageMode() == Metal.MTLStorageModeManaged:
+            sync = server.command_queue.commandBuffer()
+            encoder = sync.blitCommandEncoder()
+            encoder.synchronizeResource_(output)
+            encoder.endEncoding()
+            sync.commit()
+            sync.waitUntilCompleted()
+        expected = image if bgra else image[:, :, [2, 1, 0, 3]]
+        np.testing.assert_array_equal(copy_mtl_texture_to_image(output), expected)
+    np.testing.assert_array_equal(snapshot, strided)
+    assert not np.array_equal(snapshot, out)
+
+
 @pytest.fixture
 def server():
     import Metal
@@ -80,6 +127,11 @@ def test_metal_frames_continue_after_client_stops(server):
             assert client.is_valid
         for client in clients:
             receive(client, (17, 53, 199, 255))
+        server.name = "Renamed connected output"
+        assert server.server_description.uuid == description.uuid
+        assert all(client.is_valid for client in clients)
+        for client in clients:
+            receive(client, (41, 83, 167, 255))
         clients.pop(0).stop()
         receive(clients[0], (101, 203, 37, 255))
     finally:
@@ -147,6 +199,10 @@ def test_public_rename_and_observer_removal(server):
     import syphon
 
     changes = []
+    with syphon.SyphonServerDirectory() as directory:
+        found = directory.wait_for_server(timeout=5, name=server.name)
+        assert found is not None and found.uuid == server.server_description.uuid
+        assert any(entry.uuid == found.uuid for entry in directory.server_snapshot)
     with syphon.SyphonServerDirectory() as directory:
         directory.run_loop_interval = 0.01
         token = directory.add_observer(syphon.SyphonServerNotification.Update, lambda note: changes.append(note))

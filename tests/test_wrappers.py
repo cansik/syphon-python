@@ -1,7 +1,7 @@
 """Check wrapper behavior without requiring a GPU or a running Syphon peer."""
 
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -24,15 +24,23 @@ def test_region_and_size_defaults(region, size, expected):
     assert server._prepare_region_and_size(texture, region, size) == expected
 
 
-@pytest.mark.parametrize("external_buffer,auto_commit", [(False, True), (True, True), (True, False)])
+@pytest.mark.parametrize("external_buffer", [False, True])
+@pytest.mark.parametrize("auto_commit", [False, True])
 def test_metal_command_buffer_ownership(external_buffer, auto_commit):
     server = SyphonMetalServer.__new__(SyphonMetalServer)
     server.context = Mock()
     server.command_queue = Mock()
     buffer = Mock() if external_buffer else None
     texture = SimpleNamespace(width=lambda: 16, height=lambda: 8)
-    server.publish_frame_texture(
-        texture, region=(1, 2, 3, 4), is_flipped=True, command_buffer=buffer, auto_commit=auto_commit
+    assert (
+        server.publish_frame_texture(
+            texture,
+            region=(1, 2, 3, 4),
+            is_flipped=True,
+            command_buffer=buffer,
+            auto_commit=auto_commit,
+        )
+        is None
     )
     if external_buffer:
         server.command_queue.commandBuffer.assert_not_called()
@@ -45,7 +53,28 @@ def test_metal_command_buffer_ownership(external_buffer, auto_commit):
     assert tuple(args[2].origin) == (1, 2)
     assert tuple(args[2].size) == (3, 4)
     assert args[3] is True
-    assert buffer.commitAndWaitUntilSubmitted.call_count == int(auto_commit)
+    assert buffer.method_calls == ([call.commit(), call.waitUntilCompleted()] if auto_commit else [])
+
+
+def test_metal_submission_default_waits_for_completion_and_returns_none():
+    server = SyphonMetalServer.__new__(SyphonMetalServer)
+    server.context = Mock()
+    server.command_queue = Mock()
+    texture = SimpleNamespace(width=lambda: 16, height=lambda: 8)
+    assert server.publish_frame_texture(texture) is None
+    buffer = server.command_queue.commandBuffer.return_value
+    assert buffer.method_calls == [call.commit(), call.waitUntilCompleted()]
+
+
+def test_metal_rejects_missing_command_buffer():
+    server = SyphonMetalServer.__new__(SyphonMetalServer)
+    server.context = Mock()
+    server.command_queue = Mock()
+    server.command_queue.commandBuffer.return_value = None
+    texture = SimpleNamespace(width=lambda: 16, height=lambda: 8)
+    with pytest.raises(RuntimeError, match="command buffer"):
+        server.publish_frame_texture(texture)
+    server.context.publishFrameTexture_onCommandBuffer_imageRegion_flipped_.assert_not_called()
 
 
 @pytest.fixture
