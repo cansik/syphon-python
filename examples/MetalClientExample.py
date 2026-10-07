@@ -3,48 +3,50 @@
 import time
 
 import cv2
+import numpy as np
 
 import syphon
 from syphon.utils.numpy import copy_mtl_texture_to_image
-
-
-def wait_for_server(directory, timeout=5):
-    """Allow discovery notifications time to arrive instead of taking one snapshot."""
-    deadline = time.monotonic() + timeout
-    while True:
-        servers = directory.servers
-        if servers:
-            return servers[0]
-        if time.monotonic() >= deadline:
-            return None
-        time.sleep(0.01)
 
 
 def main():
     try:
         with syphon.SyphonServerDirectory() as directory:
             directory.run_loop_interval = 0.001
+
             # Wait for a server to announce itself before connecting.
             print("Waiting up to five seconds for a Syphon server...")
-            server = wait_for_server(directory)
+            server = directory.wait_for_server(timeout=5)
             if server is None:
                 print("No server found. Start a server and try again.")
                 return 1
+
             print(f"Connected to {server.app_name}: {server.name}. Press Escape or Q to exit.")
+
             with syphon.SyphonMetalClient(server) as client:
+                image = None
+
                 while client.is_valid:
                     directory.update_run_loop()
+
                     if client.has_new_frame:
                         # Retrieve the latest Metal texture.
                         texture = client.new_frame_image
                         if texture is not None:
-                            # Convert the texture to a NumPy image for OpenCV.
-                            image = copy_mtl_texture_to_image(texture)
+                            # Reuse the image buffer until the sender changes dimensions.
+                            shape = (texture.height(), texture.width(), 4)
+                            if image is None or image.shape != shape:
+                                image = np.empty(shape, dtype=np.uint8)
+
+                            copy_mtl_texture_to_image(texture, out=image)
                             cv2.imshow("Image", image)
+
                     # Process UI events even when no new frame arrives.
                     if cv2.waitKey(1) & 0xFF in (27, ord("q")):
                         break
+
                     time.sleep(0.001)
+
         return 0
     finally:
         cv2.destroyAllWindows()

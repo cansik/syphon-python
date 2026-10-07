@@ -30,6 +30,9 @@ def test_source_archive_is_self_contained(dist_dir):
         assert not any(
             ".git" in name.split("/") or "build" in name.split("/") or ".framework/" in name for name in names
         )
+        assert "scripts/benchmark.py" not in names
+        assert "tests/test_benchmark.py" not in names
+        assert not any(name.startswith("benchmark-results/") for name in names)
 
 
 def test_wheel_metadata_and_bundled_framework(dist_dir, tmp_path):
@@ -40,6 +43,7 @@ def test_wheel_metadata_and_bundled_framework(dist_dir, tmp_path):
     assert {str(tag) for tag in tags} == {"py3-none-macosx_12_0_universal2"}
     with zipfile.ZipFile(wheels[0]) as wheel:
         names = set(wheel.namelist())
+        assert not any(name.startswith(("scripts/", "tests/", "benchmark-results/")) for name in names)
         wheel_metadata = email.parser.BytesParser().parsebytes(
             wheel.read(next(n for n in names if n.endswith("/WHEEL")))
         )

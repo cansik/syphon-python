@@ -161,3 +161,6 @@ cython_debug/
 .DS_Store
 .ruff_cache/
 docs/**/*
+
+# Local benchmark runs
+/benchmark-results/

@@ -1,14 +1,11 @@
 """Headless examples must answer discovery requests from clients started later."""
 
-import runpy
 import signal
 import subprocess
 import sys
 import textwrap
 import time
 from pathlib import Path
-from types import SimpleNamespace
-from unittest.mock import Mock
 
 import pytest
 
@@ -16,7 +13,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.metal
-@pytest.mark.parametrize("example", ["MetalServerExample.py", "MetalServerExampleMini.py"])
+@pytest.mark.parametrize(
+    "example", ["MetalServerExample.py", "MetalServerExampleMini.py", "MetalServerAsyncExample.py"]
+)
 def test_late_client_discovers_running_metal_example(example, tmp_path):
     import Metal
 
@@ -98,18 +97,3 @@ def test_late_client_discovers_running_metal_example(example, tmp_path):
                 process.wait()
         output.seek(0)
         assert process.returncode == 0, output.read()
-
-
-@pytest.mark.parametrize("found", [True, False])
-def test_client_waits_for_discovery_and_times_out(monkeypatch, found):
-    # Discovery itself does not require OpenCV; avoid pulling GUI dependencies into unit tests.
-    monkeypatch.setitem(sys.modules, "cv2", Mock())
-    monkeypatch.setitem(sys.modules, "syphon.utils.numpy", SimpleNamespace(copy_mtl_texture_to_image=Mock()))
-    wait = runpy.run_path(str(ROOT / "examples/MetalClientExample.py"))["wait_for_server"]
-    server = object()
-    results = iter([[], [server] if found else []])
-    directory = type("Directory", (), {"servers": property(lambda _: next(results))})()
-    clock = SimpleNamespace(monotonic=Mock(side_effect=[0, 0.1, 5]), sleep=Mock())
-    wait.__globals__["time"] = clock
-    assert wait(directory) is (server if found else None)
-    clock.sleep.assert_called_once_with(0.01)

@@ -39,7 +39,7 @@ texture = ...  # MTLTexture or glTexture
 server.publish_frame_texture(texture)
 ```
 
-The `syphon.server.BaseSyphonServer.publish_frame_texture()` contains a flag called `flip` to flip the texture horizontally. This can be set to `True` if the image is upside down on the receiver side.
+The `syphon.server.BaseSyphonServer.publish_frame_texture()` contains a flag called `is_flipped` to flip the texture vertically. This can be set to `True` if the image is upside down on the receiver side.
 
 It is also possible to check if a server has connected clients with the `has_clients` property.
 
@@ -64,6 +64,28 @@ server = syphon.SyphonMetalServer("Demo", device=mtl_device)
 mtl_command_queue = mtl_device.newCommandQueue()
 server = syphon.SyphonMetalServer("Demo", device=mtl_device, command_queue=mtl_command_queue)
 ```
+
+When an application already renders with Metal, rendering and publishing can share a command buffer.
+This keeps the work on the GPU and lets the application control when it is submitted. Publishing
+normally waits for GPU completion, so the CPU can safely update the texture for the next frame.
+To overlap image preparation with publishing, use `auto_commit=False` and submit the buffer yourself:
+
+```python
+buffer = server.command_queue.commandBuffer()
+...  # encode rendering commands into buffer
+
+server.publish_frame_texture(texture, command_buffer=buffer, auto_commit=False)
+buffer.commit()
+
+...  # prepare other work while the GPU runs
+
+# wait before overwriting this texture from the CPU
+buffer.waitUntilCompleted()
+```
+
+Before the CPU overwrites a texture submitted asynchronously, call `buffer.waitUntilCompleted()`.
+The [asynchronous publishing example](https://github.com/cansik/syphon-python/blob/main/examples/MetalServerAsyncExample.py) alternates between two
+textures and waits only when reusing one, allowing image preparation and GPU work to overlap.
 
 ### OpenGL Server
 Install `syphon-python[opengl]` to enable OpenGL support. Metal usage does not require this extra.
@@ -96,6 +118,11 @@ servers = directory.servers
 for server in servers:
     print(f"{server.app_name} ({server.uuid})")
 ```
+
+Reading `directory.servers` also processes Cocoa discovery events and can wait. Applications that
+already process those events can use `directory.server_snapshot` to read the current list immediately.
+For scripts that need to connect before starting their receive loop, `directory.wait_for_server(timeout=5)`
+processes events until a server is found, returning its description or `None` on timeout.
 
 It is also possible to listen for events when a server changes its status. However, it is important to update the NSRunLoop to receive messages. This can be done by repeatedly calling `directory.update_run_loop()`.
 
@@ -203,6 +230,10 @@ texture = ...  # MLTTexture object
 data = copy_mtl_texture_to_bytes(texture)  # returns bytes
 ```
 
+For repeated reads, `copy_mtl_texture_to_buffer(texture, buffer)` fills a reusable `bytearray` or
+`memoryview` instead of allocating an immutable copy. Pixel data follows the texture's channel order;
+uploads do not convert colors.
+
 ### Numpy
 If you are working with [Numpy](https://numpy.org/) arrays, the `syphon.utils.numpy` package contains helper methods for reading and writing numpy images to and from [MTLTexture](https://developer.apple.com/documentation/metal/mtltexture).
 
@@ -233,6 +264,17 @@ texture = ...  # MLTTexture object
 
 texture_data = copy_mtl_texture_to_image(texture)  # returns numpy array
 ```
+
+For video receivers, the same output array can be reused while the frame dimensions stay unchanged:
+
+```python
+image = np.empty((texture.height(), texture.width(), 4), dtype=np.uint8)
+copy_mtl_texture_to_image(texture, out=image)
+```
+
+Allocate a new array if the sender changes dimensions. Reusing `image` replaces its previous pixels;
+copy it when an earlier frame needs to be kept. On upload, contiguous `uint8` arrays can avoid an
+extra copy, while strided images are packed automatically. An unchanged image only needs to be uploaded once.
 
 ## Python Binding
 As described in the [Objective-C to Python](#objective-c-to-python) chapter, the syphon-python library is based on the [PyObjC](https://pyobjc.readthedocs.io/en/latest/) Python to Objective-C bridge. This means that there is no intermediate wrapper between Python and Objective-C, and it is possible to access and call Objective-C objects directly from Python. This can be useful if a method of the original Syphon framework has not yet been exposed by the wrapper.

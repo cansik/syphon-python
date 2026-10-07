@@ -1,4 +1,6 @@
+import math
 import threading
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Callable, List, Optional
@@ -130,18 +132,52 @@ class SyphonServerDirectory:
         - List[SyphonServerDescription]: A list of SyphonServerDescription objects.
         """
         self.update_run_loop()
+        return self.server_snapshot
+
+    @property
+    def server_snapshot(self) -> List[SyphonServerDescription]:
+        """Read the current server list without waiting or processing Cocoa events."""
         directory = self._syphonServerDirectoryObjC.sharedDirectory()
         servers = directory.servers()
 
         return [SyphonServerDescription.from_native(raw) for raw in servers]
 
-    def update_run_loop(self):
+    def update_run_loop(self, timeout: Optional[float] = None) -> None:
         """
         Update the run loop to process events.
+
+        timeout overrides run_loop_interval for this call without changing its default.
         """
+        timeout = self.run_loop_interval if timeout is None else timeout
+        if not math.isfinite(timeout) or timeout < 0:
+            raise ValueError("Run-loop timeout must be a finite nonnegative number")
         NSRunLoop.currentRunLoop().runMode_beforeDate_(
-            NSDefaultRunLoopMode, NSDate.dateWithTimeIntervalSinceNow_(self.run_loop_interval)
+            NSDefaultRunLoopMode, NSDate.dateWithTimeIntervalSinceNow_(timeout)
         )
+
+    def wait_for_server(
+        self, timeout: float = 5.0, *, name: Optional[str] = None, app_name: Optional[str] = None
+    ) -> Optional[SyphonServerDescription]:
+        """Process main-thread Cocoa events until a matching server appears or timeout.
+
+        Return the first match, or None. Filters match either name or app_name, like
+        servers_matching_name(); omitting both filters accepts any server.
+        """
+        if not math.isfinite(timeout) or timeout < 0:
+            raise ValueError("timeout must be a finite nonnegative number")
+        deadline = time.monotonic() + timeout
+        while True:
+            for server in self.server_snapshot:
+                if (
+                    (name is None and app_name is None)
+                    or (name is not None and name == server.name)
+                    or (app_name is not None and app_name == server.app_name)
+                ):
+                    return server
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return None
+            self.update_run_loop(timeout=min(0.05, remaining))
 
     def servers_matching_name(
         self, name: Optional[str] = None, app_name: Optional[str] = None

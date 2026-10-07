@@ -8,6 +8,66 @@ import pytest
 pytestmark = pytest.mark.opengl
 
 
+@pytest.mark.parametrize("target", [0x0DE1, 0x84F5])
+def test_texture_publish_queries_correct_target_and_preserves_query_binding(target):
+    GL = pytest.importorskip("OpenGL.GL")
+    import AppKit
+    import objc
+
+    import syphon
+
+    with objc.autorelease_pool():
+        fmt = AppKit.NSOpenGLPixelFormat.alloc().initWithAttributes_(
+            [AppKit.NSOpenGLPFAOpenGLProfile, AppKit.NSOpenGLProfileVersion3_2Core, AppKit.NSOpenGLPFAColorSize, 24, 0]
+        )
+        context = None if fmt is None else AppKit.NSOpenGLContext.alloc().initWithFormat_shareContext_(fmt, None)
+        if context is None:
+            pytest.skip("No usable OpenGL context")
+        previous = AppKit.NSOpenGLContext.currentContext()
+        context.makeCurrentContext()
+        textures = list(map(int, GL.glGenTextures(2)))
+        try:
+            texture, marker = textures
+            GL.glBindTexture(target, texture)
+            pixels = bytes((17, 53, 199, 255)) * 32
+            GL.glTexImage2D(target, 0, GL.GL_RGBA8, 8, 4, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, pixels)
+            GL.glTexParameteri(target, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
+            GL.glBindTexture(target, marker)
+            GL.glFinish()
+            with syphon.SyphonOpenGLServer("Texture target test", is_private=True) as server:
+                assert server._get_texture_size(texture, target=target) == (8, 4)
+                binding = GL.GL_TEXTURE_BINDING_2D if target == GL.GL_TEXTURE_2D else GL.GL_TEXTURE_BINDING_RECTANGLE
+                assert int(GL.glGetIntegerv(binding)) == marker
+                server.publish_frame_texture(texture, target=target)
+                GL.glFinish()
+                output = server.new_frame_image
+                assert tuple(output.textureSize()) == (8, 4)
+                framebuffer = GL.glGenFramebuffers(1)
+                previous_framebuffer = GL.glGetIntegerv(GL.GL_READ_FRAMEBUFFER_BINDING)
+                try:
+                    GL.glBindFramebuffer(GL.GL_READ_FRAMEBUFFER, framebuffer)
+                    GL.glFramebufferTexture2D(
+                        GL.GL_READ_FRAMEBUFFER,
+                        GL.GL_COLOR_ATTACHMENT0,
+                        GL.GL_TEXTURE_RECTANGLE,
+                        output.textureName(),
+                        0,
+                    )
+                    GL.glReadBuffer(GL.GL_COLOR_ATTACHMENT0)
+                    assert GL.glCheckFramebufferStatus(GL.GL_READ_FRAMEBUFFER) == GL.GL_FRAMEBUFFER_COMPLETE
+                    assert bytes(GL.glReadPixels(0, 0, 8, 4, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE)) == pixels
+                finally:
+                    GL.glBindFramebuffer(GL.GL_READ_FRAMEBUFFER, previous_framebuffer)
+                    GL.glDeleteFramebuffers(1, [framebuffer])
+                    del output
+        finally:
+            GL.glDeleteTextures(textures)
+            if previous is None:
+                AppKit.NSOpenGLContext.clearCurrentContext()
+            else:
+                previous.makeCurrentContext()
+
+
 @pytest.mark.parametrize("sample_count", [0, 4])
 def test_direct_framebuffer_rendering(sample_count):
     GL = pytest.importorskip("OpenGL.GL")

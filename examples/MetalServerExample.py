@@ -17,11 +17,13 @@ def main():
         descriptor = Metal.MTLTextureDescriptor.texture2DDescriptorWithPixelFormat_width_height_mipmapped_(
             Metal.MTLPixelFormatRGBA8Unorm, width, height, False
         )
+
         # Create the texture on the server's Metal device.
         texture = server.device.newTextureWithDescriptor_(descriptor)
         region = Metal.MTLRegion((0, 0, 0), (width, height, 1))
         value = 0
         print("publishing... (Ctrl+C to stop)")
+
         while True:
             started = time.monotonic()
 
